@@ -278,13 +278,58 @@ export default function RewardsScreen() {
         const randomReward =
           spinRewards[Math.floor(Math.random() * spinRewards.length)];
         setWonReward(randomReward);
+        setUserPoints(userPoints + randomReward.points);
         setShowRewardAnimation(true);
         setTimeout(() => {
           setShowRewardAnimation(false);
           setWonReward(null);
+          spinAnimation.setValue(0);
         }, 2000);
       });
     }
+  };
+
+  const TabButton = ({ 
+    title, 
+    icon, 
+    isActive, 
+    onPress, 
+    gradientColors 
+  }: {
+    title: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    isActive: boolean;
+    onPress: () => void;
+    gradientColors: string[];
+  }) => {
+    if (isActive) {
+      return (
+        <TouchableOpacity className="flex-1" onPress={onPress}>
+          <LinearGradient
+            colors={gradientColors}
+            style={{
+              paddingVertical: 12,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'row',
+            }}
+          >
+            <Ionicons name={icon} size={20} color="white" />
+            <Text className="ml-2 font-semibold text-white">{title}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity className="flex-1 py-3" onPress={onPress}>
+        <View className="flex-row items-center justify-center">
+          <Ionicons name={icon} size={20} color="#6b7280" />
+          <Text className="ml-2 font-semibold text-gray-400">{title}</Text>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -304,7 +349,13 @@ export default function RewardsScreen() {
           <View className="flex-row items-center space-x-4">
             <LinearGradient
               colors={["#f59e0b", "#d97706"]}
-              className="px-6 py-3 rounded-full border-2 border-yellow-400"
+              style={{
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 9999,
+                borderWidth: 2,
+                borderColor: '#facc15',
+              }}
             >
               <View className="flex-row items-center">
                 <Ionicons name="star" size={24} color="white" />
@@ -315,7 +366,13 @@ export default function RewardsScreen() {
             </LinearGradient>
             <LinearGradient
               colors={["#8b5cf6", "#6d28d9"]}
-              className="px-6 py-3 rounded-full border-2 border-purple-400"
+              style={{
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 9999,
+                borderWidth: 2,
+                borderColor: '#a78bfa',
+              }}
             >
               <View className="flex-row items-center">
                 <Ionicons name="diamond" size={24} color="white" />
@@ -331,57 +388,27 @@ export default function RewardsScreen() {
       {/* Tab Navigation with Game-like Design */}
       <View className="px-6 mt-6">
         <View className="bg-slate-800 p-1 rounded-2xl flex-row border border-slate-700">
-          <TouchableOpacity
-            className={`flex-1 py-3 rounded-xl ${selectedTab === "daily" ? "bg-gradient-to-r from-blue-500 to-blue-600" : ""}`}
+          <TabButton
+            title="Daily"
+            icon="calendar"
+            isActive={selectedTab === "daily"}
             onPress={() => setSelectedTab("daily")}
-          >
-            <View className="flex-row items-center justify-center">
-              <Ionicons
-                name="calendar"
-                size={20}
-                color={selectedTab === "daily" ? "white" : "#6b7280"}
-              />
-              <Text
-                className={`ml-2 font-semibold ${selectedTab === "daily" ? "text-white" : "text-gray-400"}`}
-              >
-                Daily
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`flex-1 py-3 rounded-xl ${selectedTab === "battle" ? "bg-gradient-to-r from-purple-500 to-purple-600" : ""}`}
+            gradientColors={["#3b82f6", "#60a5fa"]}
+          />
+          <TabButton
+            title="Battle Pass"
+            icon="trophy"
+            isActive={selectedTab === "battle"}
             onPress={() => setSelectedTab("battle")}
-          >
-            <View className="flex-row items-center justify-center">
-              <Ionicons
-                name="trophy"
-                size={20}
-                color={selectedTab === "battle" ? "white" : "#6b7280"}
-              />
-              <Text
-                className={`ml-2 font-semibold ${selectedTab === "battle" ? "text-white" : "text-gray-400"}`}
-              >
-                Battle Pass
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`flex-1 py-3 rounded-xl ${selectedTab === "spin" ? "bg-gradient-to-r from-yellow-500 to-yellow-600" : ""}`}
+            gradientColors={["#8b5cf6", "#a78bfa"]}
+          />
+          <TabButton
+            title="Lucky Spin"
+            icon="gift"
+            isActive={selectedTab === "spin"}
             onPress={() => setSelectedTab("spin")}
-          >
-            <View className="flex-row items-center justify-center">
-              <Ionicons
-                name="gift"
-                size={20}
-                color={selectedTab === "spin" ? "white" : "#6b7280"}
-              />
-              <Text
-                className={`ml-2 font-semibold ${selectedTab === "spin" ? "text-white" : "text-gray-400"}`}
-              >
-                Lucky Spin
-              </Text>
-            </View>
-          </TouchableOpacity>
+            gradientColors={["#eab308", "#facc15"]}
+          />
         </View>
       </View>
 
@@ -483,8 +510,9 @@ export default function RewardsScreen() {
                 <View className="bg-slate-700 rounded-full h-2 mt-3">
                   <LinearGradient
                     colors={["#3b82f6", "#60a5fa"]}
-                    className="rounded-full h-2"
                     style={{
+                      borderRadius: 9999,
+                      height: 8,
                       width: `${((reward.progress || 0) / (reward.maxProgress || 100)) * 100}%`,
                     }}
                   />
@@ -512,7 +540,7 @@ export default function RewardsScreen() {
                     {
                       rotate: spinAnimation.interpolate({
                         inputRange: [0, 1],
-                        outputRange: ["0deg", "360deg"],
+                        outputRange: ["0deg", "1440deg"],
                       }),
                     },
                   ],
@@ -523,39 +551,28 @@ export default function RewardsScreen() {
                 </Text>
               </Animated.View>
               <TouchableOpacity
-                className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-8 py-3 rounded-full border-2 border-yellow-400"
                 onPress={handleSpin}
                 disabled={spinCoins === 0}
+                style={{
+                  opacity: spinCoins === 0 ? 0.5 : 1,
+                }}
               >
-                <Text className="text-white font-bold text-lg">SPIN NOW</Text>
+                <LinearGradient
+                  colors={["#eab308", "#facc15"]}
+                  style={{
+                    paddingHorizontal: 32,
+                    paddingVertical: 12,
+                    borderRadius: 9999,
+                    borderWidth: 2,
+                    borderColor: '#facc15',
+                  }}
+                >
+                  <Text className="text-white font-bold text-lg">
+                    {spinCoins === 0 ? "NO SPINS LEFT" : "SPIN NOW"}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-
-            {/* Won Reward Animation */}
-            {showRewardAnimation && wonReward && (
-              <View className="absolute inset-0 items-center justify-center bg-black/80">
-                <View className="bg-slate-800 p-6 rounded-3xl items-center border-2 border-yellow-500">
-                  <View
-                    className="p-4 rounded-full mb-4 border-2"
-                    style={{
-                      backgroundColor: getRarityColor(wonReward.rarity),
-                      borderColor:
-                        wonReward.rarity === "legendary"
-                          ? "#f59e0b"
-                          : "transparent",
-                    }}
-                  >
-                    <Ionicons name={wonReward.icon} size={32} color="white" />
-                  </View>
-                  <Text className="text-white text-xl font-bold mb-2">
-                    Congratulations!
-                  </Text>
-                  <Text className="text-yellow-400 text-lg font-bold">
-                    {wonReward.title}
-                  </Text>
-                </View>
-              </View>
-            )}
 
             <Text className="text-white text-lg font-bold mb-4">
               Possible Rewards
@@ -589,6 +606,38 @@ export default function RewardsScreen() {
           </View>
         )}
       </View>
+
+      {/* Won Reward Animation */}
+      {showRewardAnimation && wonReward && (
+        <Modal
+          visible={showRewardAnimation}
+          transparent
+          animationType="fade"
+        >
+          <View className="flex-1 items-center justify-center bg-black/80">
+            <View className="bg-slate-800 p-6 rounded-3xl items-center border-2 border-yellow-500">
+              <View
+                className="p-4 rounded-full mb-4 border-2"
+                style={{
+                  backgroundColor: getRarityColor(wonReward.rarity),
+                  borderColor:
+                    wonReward.rarity === "legendary"
+                      ? "#f59e0b"
+                      : "transparent",
+                }}
+              >
+                <Ionicons name={wonReward.icon} size={32} color="white" />
+              </View>
+              <Text className="text-white text-xl font-bold mb-2">
+                Congratulations!
+              </Text>
+              <Text className="text-yellow-400 text-lg font-bold">
+                You won {wonReward.title}!
+              </Text>
+            </View>
+          </View>
+        </Modal>
+      )}
 
       {/* Redeem Modal with Game-like Design */}
       <Modal
@@ -624,9 +673,14 @@ export default function RewardsScreen() {
                   <Text className="text-white text-lg font-bold">
                     {selectedReward.title}
                   </Text>
-                  <Text className="text-gray-400 text-center mt-2">
-                    {selectedReward.description}
+                  <Text className="text-yellow-400 text-center mt-2 font-semibold">
+                    +{selectedReward.points} Points
                   </Text>
+                  {selectedReward.description && (
+                    <Text className="text-gray-400 text-center mt-2">
+                      {selectedReward.description}
+                    </Text>
+                  )}
                 </View>
                 <View className="flex-row justify-between">
                   <TouchableOpacity
@@ -638,12 +692,22 @@ export default function RewardsScreen() {
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 py-3 rounded-xl ml-2 border border-blue-400"
                     onPress={confirmRedeem}
+                    className="flex-1 ml-2"
                   >
-                    <Text className="text-white text-center font-semibold">
-                      Confirm
-                    </Text>
+                    <LinearGradient
+                      colors={["#3b82f6", "#60a5fa"]}
+                      style={{
+                        paddingVertical: 12,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: '#60a5fa',
+                      }}
+                    >
+                      <Text className="text-white text-center font-semibold">
+                        Confirm
+                      </Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
               </>
