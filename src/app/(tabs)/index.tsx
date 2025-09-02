@@ -4,8 +4,24 @@ import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-const HomeScreen = ({ navigation }) => {
-  const subjects = [
+type Subject = {
+  id: number;
+  name: string;
+  progress: number;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: [string, string];
+};
+
+type Activity = {
+  id: number;
+  subject: string;
+  lesson: string;
+  time: string;
+  points: number;
+};
+
+const HomeScreen: React.FC = () => {
+  const subjects: Subject[] = [
     {
       id: 1,
       name: "Mathematics",
@@ -36,7 +52,7 @@ const HomeScreen = ({ navigation }) => {
     },
   ];
 
-  const recentActivity = [
+  const recentActivity: Activity[] = [
     {
       id: 1,
       subject: "Mathematics",
@@ -96,10 +112,7 @@ const HomeScreen = ({ navigation }) => {
         <Text className="text-white text-xl font-bold mb-4">
           Continue Learning
         </Text>
-        <TouchableOpacity
-          className="bg-slate-800 rounded-3xl overflow-hidden"
-          onPress={() => navigation.navigate("Study")}
-        >
+        <TouchableOpacity className="bg-slate-800 rounded-3xl overflow-hidden">
           <LinearGradient
             colors={["#4facfe", "#00f2fe"]}
             start={{ x: 0, y: 0 }}
@@ -128,16 +141,8 @@ const HomeScreen = ({ navigation }) => {
       <View className="px-6 mt-8">
         <Text className="text-white text-xl font-bold mb-4">Your Subjects</Text>
         <View className="flex-row flex-wrap justify-between">
-          {subjects.map((subject) => (
-            <TouchableOpacity
-              key={subject.id}
-              className="w-[48%] mb-4"
-              onPress={() =>
-                navigation.navigate("study", {
-                  params: { subject: JSON.stringify(subject) },
-                })
-              }
-            >
+          {subjects.map(subject => (
+            <TouchableOpacity key={subject.id} className="w-[48%] mb-4">
               <LinearGradient
                 colors={subject.color}
                 className="p-5 rounded-2xl"
@@ -171,7 +176,7 @@ const HomeScreen = ({ navigation }) => {
         <Text className="text-white text-xl font-bold mb-4">
           Recent Activity
         </Text>
-        {recentActivity.map((activity) => (
+        {recentActivity.map(activity => (
           <View key={activity.id} className="bg-slate-800 p-4 rounded-2xl mb-3">
             <View className="flex-row justify-between items-center">
               <View className="flex-1">

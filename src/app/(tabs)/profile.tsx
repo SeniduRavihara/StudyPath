@@ -1,13 +1,64 @@
 /* eslint-disable prettier/prettier */
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { Redirect } from "expo-router";
 import React from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useAuth } from "../../contexts/AuthContext";
+
+type UserStats = {
+  name: string;
+  email: string;
+  level: string;
+  points: number;
+  streak: number;
+  completedLessons: number;
+  totalHours: number;
+  rank: string;
+};
+
+type Achievement = {
+  name: string;
+  date: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
+
+type MenuItem = {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+};
 
 export default function ProfileScreen() {
-  const userStats = {
-    name: "Alex Kumar",
-    email: "alex.kumar@email.com",
+  const { user, signOut, loading } = useAuth();
+
+  console.log("Profile Screen - User:", user); // Debug log
+
+  // If no user, redirect to login immediately
+  if (!loading && !user) {
+    console.log("Profile Screen - NO USER, redirecting to login!"); // Debug log
+    return <Redirect href="/auth/login" />;
+  }
+
+  // If still loading, show loading state
+  if (loading) {
+    return (
+      <View className="flex-1 bg-slate-900 justify-center items-center">
+        <Text className="text-white text-lg">Loading...</Text>
+      </View>
+    );
+  }
+
+  const userStats: UserStats = {
+    name: user?.user_metadata?.name || "Student",
+    email: user?.email || "student@email.com",
     level: "Advanced Learner",
     points: 2847,
     streak: 12,
@@ -16,13 +67,13 @@ export default function ProfileScreen() {
     rank: "Top 5%",
   };
 
-  const recentAchievements = [
+  const recentAchievements: Achievement[] = [
     { name: "Mathematics Master", date: "2 days ago", icon: "calculator" },
     { name: "Study Streak Champion", date: "1 week ago", icon: "flame" },
     { name: "Perfect Score", date: "2 weeks ago", icon: "trophy" },
   ];
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     {
       icon: "person-outline",
       title: "Edit Profile",
@@ -44,6 +95,33 @@ export default function ProfileScreen() {
       subtitle: "App version and info",
     },
   ];
+
+  const handleLogout = async () => {
+    console.log("Logout button pressed"); // Debug log
+
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            console.log("Attempting to sign out..."); // Debug log
+            const { error } = await signOut();
+            if (error) {
+              console.error("Sign out error:", error); // Debug log
+              Alert.alert("Error", `Failed to logout: ${error.message}`);
+            } else {
+              console.log("Sign out successful"); // Debug log
+            }
+          } catch (error) {
+            console.error("Sign out exception:", error); // Debug log
+            Alert.alert("Error", "Failed to logout");
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <ScrollView className="flex-1 bg-slate-900">
@@ -162,7 +240,10 @@ export default function ProfileScreen() {
 
       {/* Logout Button */}
       <View className="px-6 mt-8 mb-8">
-        <TouchableOpacity className="bg-red-600 p-4 rounded-2xl">
+        <TouchableOpacity
+          className="bg-red-600 p-4 rounded-2xl"
+          onPress={handleLogout}
+        >
           <View className="flex-row items-center justify-center">
             <Ionicons name="log-out-outline" size={24} color="white" />
             <Text className="text-white font-semibold text-lg ml-2">

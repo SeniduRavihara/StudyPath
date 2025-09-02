@@ -126,18 +126,17 @@ export default function FeedScreen() {
 
   const handleLike = (postId: number): void => {
     setPosts(
-      posts.map((post) =>
+      posts.map(post =>
         post.id === postId
           ? {
               ...post,
               liked: !post.liked,
               likes: post.liked ? post.likes - 1 : post.likes + 1,
             }
-          : post
-      )
+          : post,
+      ),
     );
   };
-
   const subjectColors: SubjectColors = {
     Mathematics: ["#667eea", "#764ba2"],
     Physics: ["#f093fb", "#f5576c"],
@@ -147,7 +146,7 @@ export default function FeedScreen() {
   };
 
   const getPostTypeIcon = (
-    type: Post["type"]
+    type: Post["type"],
   ): keyof typeof Ionicons.glyphMap => {
     switch (type) {
       case "achievement":
@@ -185,7 +184,7 @@ export default function FeedScreen() {
 
       {/* Posts */}
       <View className="px-6 mt-4">
-        {posts.map((post) => (
+        {posts.map(post => (
           <View key={post.id} className="bg-slate-800 rounded-3xl p-5 mb-4">
             {/* User Info */}
             <View className="flex-row items-center mb-4">

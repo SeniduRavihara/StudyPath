@@ -4,14 +4,23 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
+type Lesson = {
+  id: number;
+  title: string;
+  duration: string;
+  type: "video" | "reading" | "quiz";
+  completed: boolean;
+  points: number;
+};
+
 export default function LessonScreen() {
   const router = useRouter();
   const { chapter, subject } = useLocalSearchParams();
   const parsedChapter = JSON.parse(chapter as string);
   const parsedSubject = JSON.parse(subject as string);
-  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [, setSelectedLesson] = useState<Lesson | null>(null);
 
-  const lessons = [
+  const lessons: Lesson[] = [
     {
       id: 1,
       title: "What is Calculus?",
@@ -54,7 +63,9 @@ export default function LessonScreen() {
     },
   ];
 
-  const getTypeIcon = (type) => {
+  const getTypeIcon = (
+    type: Lesson["type"],
+  ): keyof typeof Ionicons.glyphMap => {
     switch (type) {
       case "video":
         return "play-circle";
@@ -66,8 +77,7 @@ export default function LessonScreen() {
         return "document";
     }
   };
-
-  const getTypeColor = (type) => {
+  const getTypeColor = (type: Lesson["type"]): string => {
     switch (type) {
       case "video":
         return "#ef4444";

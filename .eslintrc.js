@@ -6,5 +6,6 @@ module.exports = {
   rules: {
     "prettier/prettier": "error",
     "import/no-unresolved": "off",
+    "@typescript-eslint/comma-dangle": "off",
   },
 };

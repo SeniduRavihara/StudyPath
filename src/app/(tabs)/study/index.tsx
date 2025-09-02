@@ -77,7 +77,7 @@ export default function StudyScreen() {
         params: { subject: JSON.stringify(parsedSubject) },
       });
     }
-  }, [parsedSubject]);
+  }, [parsedSubject, router]);
 
   return (
     <ScrollView className="flex-1 bg-slate-900">
@@ -146,7 +146,7 @@ export default function StudyScreen() {
       {/* Subjects */}
       <View className="px-6 mt-8">
         <Text className="text-white text-xl font-bold mb-4">Subjects</Text>
-        {subjects.map((subject) => (
+        {subjects.map(subject => (
           <TouchableOpacity
             key={subject.id}
             className="mb-4"

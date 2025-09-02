@@ -4,12 +4,22 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
+type Chapter = {
+  id: number;
+  title: string;
+  lessons: number;
+  completed: number;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  duration: string;
+  points: number;
+};
+
 export default function SubjectDetailScreen() {
   const router = useRouter();
   const { subject } = useLocalSearchParams();
   const parsedSubject = JSON.parse(subject as string);
 
-  const chapters = [
+  const chapters: Chapter[] = [
     {
       id: 1,
       title: "Introduction to Calculus",
@@ -57,7 +67,7 @@ export default function SubjectDetailScreen() {
     },
   ];
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: Chapter["difficulty"]): string => {
     switch (difficulty) {
       case "Beginner":
         return "#10b981";

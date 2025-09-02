@@ -29,12 +29,12 @@ type Reward = {
 export default function RewardsScreen() {
   const [userPoints, setUserPoints] = useState(2847);
   const [selectedTab, setSelectedTab] = useState<"daily" | "battle" | "spin">(
-    "daily"
+    "daily",
   );
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
-  const [vipLevel, setVipLevel] = useState(3);
-  const [battlePassLevel, setBattlePassLevel] = useState(15);
+  const [vipLevel] = useState(3);
+  const [battlePassLevel] = useState(15);
   const [spinCoins, setSpinCoins] = useState(3);
 
   const [spinAnimation] = useState(new Animated.Value(0));
@@ -44,7 +44,7 @@ export default function RewardsScreen() {
   // Reset spin animation when tab changes
   useEffect(() => {
     spinAnimation.setValue(0);
-  }, [selectedTab]);
+  }, [selectedTab, spinAnimation]);
 
   const dailyRewards: Reward[] = [
     {
@@ -159,6 +159,7 @@ export default function RewardsScreen() {
     },
   ];
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const vipRewards: Reward[] = [
     {
       id: 1,
@@ -289,18 +290,18 @@ export default function RewardsScreen() {
     }
   };
 
-  const TabButton = ({ 
-    title, 
-    icon, 
-    isActive, 
-    onPress, 
-    gradientColors 
+  const TabButton = ({
+    title,
+    icon,
+    isActive,
+    onPress,
+    gradientColors,
   }: {
     title: string;
     icon: keyof typeof Ionicons.glyphMap;
     isActive: boolean;
     onPress: () => void;
-    gradientColors: string[];
+    gradientColors: [string, string];
   }) => {
     if (isActive) {
       return (
@@ -310,9 +311,9 @@ export default function RewardsScreen() {
             style={{
               paddingVertical: 12,
               borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'row',
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "row",
             }}
           >
             <Ionicons name={icon} size={20} color="white" />
@@ -354,7 +355,7 @@ export default function RewardsScreen() {
                 paddingVertical: 12,
                 borderRadius: 9999,
                 borderWidth: 2,
-                borderColor: '#facc15',
+                borderColor: "#facc15",
               }}
             >
               <View className="flex-row items-center">
@@ -371,7 +372,7 @@ export default function RewardsScreen() {
                 paddingVertical: 12,
                 borderRadius: 9999,
                 borderWidth: 2,
-                borderColor: '#a78bfa',
+                borderColor: "#a78bfa",
               }}
             >
               <View className="flex-row items-center">
@@ -425,7 +426,7 @@ export default function RewardsScreen() {
               </View>
             </View>
             <View className="flex-row flex-wrap justify-between">
-              {dailyRewards.map((reward) => (
+              {dailyRewards.map(reward => (
                 <TouchableOpacity
                   key={reward.id}
                   className="w-[30%] mb-4"
@@ -475,7 +476,7 @@ export default function RewardsScreen() {
                 </Text>
               </View>
             </View>
-            {battlePassRewards.map((reward) => (
+            {battlePassRewards.map(reward => (
               <View
                 key={reward.id}
                 className="bg-slate-800 rounded-2xl p-4 mb-3 border border-slate-700"
@@ -564,7 +565,7 @@ export default function RewardsScreen() {
                     paddingVertical: 12,
                     borderRadius: 9999,
                     borderWidth: 2,
-                    borderColor: '#facc15',
+                    borderColor: "#facc15",
                   }}
                 >
                   <Text className="text-white font-bold text-lg">
@@ -578,7 +579,7 @@ export default function RewardsScreen() {
               Possible Rewards
             </Text>
             <View className="flex-row flex-wrap justify-between">
-              {spinRewards.map((reward) => (
+              {spinRewards.map(reward => (
                 <View key={reward.id} className="w-[30%] mb-4">
                   <LinearGradient
                     colors={["#1a1a2e", "#16213e"]}
@@ -609,11 +610,7 @@ export default function RewardsScreen() {
 
       {/* Won Reward Animation */}
       {showRewardAnimation && wonReward && (
-        <Modal
-          visible={showRewardAnimation}
-          transparent
-          animationType="fade"
-        >
+        <Modal visible={showRewardAnimation} transparent animationType="fade">
           <View className="flex-1 items-center justify-center bg-black/80">
             <View className="bg-slate-800 p-6 rounded-3xl items-center border-2 border-yellow-500">
               <View
@@ -701,7 +698,7 @@ export default function RewardsScreen() {
                         paddingVertical: 12,
                         borderRadius: 12,
                         borderWidth: 1,
-                        borderColor: '#60a5fa',
+                        borderColor: "#60a5fa",
                       }}
                     >
                       <Text className="text-white text-center font-semibold">
