@@ -69,11 +69,11 @@ export default function StudyScreen() {
     },
   ];
 
-  // If we have a subject from navigation, redirect to subject screen
+  // If we have a subject from navigation, redirect to topics screen
   React.useEffect(() => {
     if (parsedSubject) {
       router.replace({
-        pathname: "/study/subject",
+        pathname: "/study/topics",
         params: { subject: JSON.stringify(parsedSubject) },
       });
     }
@@ -152,7 +152,7 @@ export default function StudyScreen() {
             className="mb-4"
             onPress={() =>
               router.push({
-                pathname: "/study/subject",
+                pathname: "/study/topics",
                 params: { subject: JSON.stringify(subject) },
               })
             }
