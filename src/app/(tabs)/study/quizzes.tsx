@@ -1,21 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
-
-type QuizTopic = {
-  id: number;
-  title: string;
-  description: string;
-  questionCount: number;
-  timeLimit: number; // in minutes
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
-  completed: number;
-  total: number;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: [string, string];
-};
+import quizService, { Quiz } from "../../../lib/quizService";
 
 export default function QuizzesScreen() {
   const router = useRouter();
@@ -23,60 +11,52 @@ export default function QuizzesScreen() {
   const parsedSubject = JSON.parse(subject as string);
   const parsedTopic = JSON.parse(topic as string);
 
-  const [selectedQuiz, setSelectedQuiz] = useState<QuizTopic | null>(null);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const quizTopics: QuizTopic[] = [
-    {
-      id: 1,
-      title: "Basic Concepts",
-      description: "Fundamental principles and definitions",
-      questionCount: 10,
-      timeLimit: 15,
-      difficulty: "Beginner",
-      completed: 3,
-      total: 5,
-      icon: "bulb",
-      color: ["#10b981", "#059669"],
-    },
-    {
-      id: 2,
-      title: "Problem Solving",
-      description: "Apply concepts to solve problems",
-      questionCount: 15,
-      timeLimit: 25,
-      difficulty: "Intermediate",
-      completed: 2,
-      total: 8,
-      icon: "calculator",
-      color: ["#f59e0b", "#d97706"],
-    },
-    {
-      id: 3,
-      title: "Advanced Applications",
-      description: "Complex scenarios and real-world applications",
-      questionCount: 20,
-      timeLimit: 35,
-      difficulty: "Advanced",
-      completed: 1,
-      total: 12,
-      icon: "rocket",
-      color: ["#ef4444", "#dc2626"],
-    },
-    {
-      id: 4,
-      title: "Mixed Review",
-      description: "Comprehensive review of all topics",
-      questionCount: 25,
-      timeLimit: 45,
-      difficulty: "Intermediate",
-      completed: 0,
-      total: 6,
-      icon: "refresh",
-      color: ["#8b5cf6", "#7c3aed"],
-    },
-  ];
+  useEffect(() => {
+    loadQuizzes();
+  }, []);
 
-  const handleQuizPress = (quiz: QuizTopic) => {
+  // Debug: Log database info
+  useEffect(() => {
+    const logDbInfo = async () => {
+      try {
+        const { database } = await import("../../../lib/database");
+        await database.getTableInfo();
+      } catch (error) {
+        console.error("Error logging database info:", error);
+      }
+    };
+    logDbInfo();
+  }, [quizzes]);
+
+  const loadQuizzes = async () => {
+    try {
+      setLoading(true);
+      const subjectQuizzes = await quizService.getQuizzesBySubject(
+        parsedSubject.name,
+      );
+      setQuizzes(subjectQuizzes);
+    } catch (error) {
+      console.error("Error loading quizzes:", error);
+      // If no quizzes exist, create sample ones
+      try {
+        await quizService.createSampleQuizzes();
+        const subjectQuizzes = await quizService.getQuizzesBySubject(
+          parsedSubject.name,
+        );
+        setQuizzes(subjectQuizzes);
+      } catch (createError) {
+        console.error("Error creating sample quizzes:", createError);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuizPress = (quiz: Quiz) => {
     setSelectedQuiz(quiz);
     Alert.alert(
       `Start ${quiz.title}`,
@@ -94,7 +74,7 @@ export default function QuizzesScreen() {
     );
   };
 
-  const startQuiz = (quiz: QuizTopic) => {
+  const startQuiz = (quiz: Quiz) => {
     // Navigate to the actual quiz taking screen
     router.push({
       pathname: "/study/take-quiz",
@@ -106,7 +86,7 @@ export default function QuizzesScreen() {
     });
   };
 
-  const getDifficultyColor = (difficulty: QuizTopic["difficulty"]): string => {
+  const getDifficultyColor = (difficulty: Quiz["difficulty"]): string => {
     switch (difficulty) {
       case "Beginner":
         return "#10b981";
@@ -152,12 +132,14 @@ export default function QuizzesScreen() {
         <View className="flex-row justify-between">
           <View className="items-center">
             <Text className="text-white text-2xl font-bold">
-              {quizTopics.length}
+              {quizzes.length}
             </Text>
-            <Text className="text-white opacity-80 text-sm">Quiz Topics</Text>
+            <Text className="text-white opacity-80 text-sm">Available</Text>
           </View>
           <View className="items-center">
-            <Text className="text-white text-2xl font-bold">70</Text>
+            <Text className="text-white text-2xl font-bold">
+              {quizzes.reduce((sum, quiz) => sum + quiz.questionCount, 0)}
+            </Text>
             <Text className="text-white opacity-80 text-sm">Questions</Text>
           </View>
           <View className="items-center">
@@ -173,71 +155,64 @@ export default function QuizzesScreen() {
           Available Quizzes
         </Text>
 
-        {quizTopics.map(quiz => (
-          <TouchableOpacity
-            key={quiz.id}
-            className="mb-4"
-            onPress={() => handleQuizPress(quiz)}
-          >
-            <LinearGradient
-              colors={["#1a1a2e", "#16213e"]}
-              className="p-6 rounded-3xl"
+        {loading ? (
+          <View className="items-center py-8">
+            <Text className="text-white text-lg">Loading quizzes...</Text>
+          </View>
+        ) : quizzes.length === 0 ? (
+          <View className="items-center py-8">
+            <Text className="text-white text-lg">No quizzes available</Text>
+          </View>
+        ) : (
+          quizzes.map(quiz => (
+            <TouchableOpacity
+              key={quiz.id}
+              className="mb-4"
+              onPress={() => handleQuizPress(quiz)}
             >
-              <View className="flex-row items-center">
-                <LinearGradient
-                  colors={quiz.color}
-                  className="p-4 rounded-2xl mr-4"
-                >
-                  <Ionicons name={quiz.icon} size={28} color="white" />
-                </LinearGradient>
+              <LinearGradient
+                colors={["#1a1a2e", "#16213e"]}
+                className="p-6 rounded-3xl"
+              >
+                <View className="flex-row items-center">
+                  <View className="bg-blue-500 p-4 rounded-2xl mr-4">
+                    <Ionicons name="help-circle" size={28} color="white" />
+                  </View>
 
-                <View className="flex-1">
-                  <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-white text-lg font-bold">
-                      {quiz.title}
+                  <View className="flex-1">
+                    <View className="flex-row justify-between items-center mb-2">
+                      <Text className="text-white text-lg font-bold">
+                        {quiz.title}
+                      </Text>
+                      <View
+                        className="px-3 py-1 rounded-full"
+                        style={{
+                          backgroundColor: getDifficultyColor(quiz.difficulty),
+                        }}
+                      >
+                        <Text className="text-white text-xs font-semibold">
+                          {quiz.difficulty}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text className="text-gray-400 text-sm mb-3">
+                      {quiz.description}
                     </Text>
-                    <View
-                      className="px-3 py-1 rounded-full"
-                      style={{
-                        backgroundColor: getDifficultyColor(quiz.difficulty),
-                      }}
-                    >
-                      <Text className="text-white text-xs font-semibold">
-                        {quiz.difficulty}
+
+                    <View className="flex-row justify-between items-center mb-3">
+                      <Text className="text-gray-400 text-sm">
+                        {quiz.questionCount} questions • {quiz.timeLimit} min
                       </Text>
                     </View>
                   </View>
 
-                  <Text className="text-gray-400 text-sm mb-3">
-                    {quiz.description}
-                  </Text>
-
-                  <View className="flex-row justify-between items-center mb-3">
-                    <Text className="text-gray-400 text-sm">
-                      {quiz.questionCount} questions • {quiz.timeLimit} min
-                    </Text>
-                    <Text className="text-gray-400 text-sm">
-                      {quiz.completed}/{quiz.total} completed
-                    </Text>
-                  </View>
-
-                  {/* Progress Bar */}
-                  <View className="bg-slate-700 rounded-full h-2">
-                    <LinearGradient
-                      colors={quiz.color}
-                      className="rounded-full h-2"
-                      style={{
-                        width: `${(quiz.completed / quiz.total) * 100}%`,
-                      }}
-                    />
-                  </View>
+                  <Ionicons name="chevron-forward" size={24} color="#6b7280" />
                 </View>
-
-                <Ionicons name="chevron-forward" size={24} color="#6b7280" />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        ))}
+              </LinearGradient>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
 
       {/* Quick Stats */}
@@ -252,15 +227,15 @@ export default function QuizzesScreen() {
           <View className="flex-row justify-between">
             <View className="items-center">
               <Text className="text-2xl font-bold text-green-400">
-                {quizTopics.reduce((sum, quiz) => sum + quiz.completed, 0)}
+                {quizzes.length}
               </Text>
-              <Text className="text-gray-400 text-sm">Completed</Text>
+              <Text className="text-gray-400 text-sm">Available</Text>
             </View>
             <View className="items-center">
               <Text className="text-2xl font-bold text-blue-400">
-                {quizTopics.reduce((sum, quiz) => sum + quiz.total, 0)}
+                {quizzes.reduce((sum, quiz) => sum + quiz.questionCount, 0)}
               </Text>
-              <Text className="text-gray-400 text-sm">Total</Text>
+              <Text className="text-gray-400 text-sm">Questions</Text>
             </View>
             <View className="items-center">
               <Text className="text-2xl font-bold text-yellow-400">85%</Text>

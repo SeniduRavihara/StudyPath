@@ -22,6 +22,7 @@
     "expo-linear-gradient": "~14.0.2",
     "expo-linking": "~7.0.5",
     "expo-router": "~4.0.17",
+    "expo-sqlite": "~15.1.4",
     "expo-status-bar": "~2.0.1",
     "nativewind": "^4.1.23",
     "react": "18.3.1",

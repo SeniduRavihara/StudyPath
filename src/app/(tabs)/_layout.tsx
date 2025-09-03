@@ -98,6 +98,19 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="debug"
+        options={{
+          title: "Debug",
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? "bug" : "bug-outline"}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
