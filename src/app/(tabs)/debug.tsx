@@ -22,18 +22,28 @@ export default function DebugScreen() {
         {/* Database Tools */}
         <View className="bg-slate-800 p-6 rounded-2xl">
           <Text className="text-white text-lg font-bold mb-4">
-            📊 Database Tools
+            🚀 Drizzle ORM Tools
           </Text>
 
           <TouchableOpacity
-            className="bg-blue-500 p-4 rounded-xl mb-4"
-            onPress={() => router.push("/debug/database")}
+            className="bg-purple-500 p-4 rounded-xl mb-4"
+            onPress={async () => {
+              try {
+                const drizzleQuizService = await import(
+                  "../../lib/drizzleQuizService"
+                );
+                await drizzleQuizService.default.createSampleQuizzes();
+                console.log("✅ Drizzle sample quizzes created!");
+              } catch (error) {
+                console.error("❌ Drizzle test failed:", error);
+              }
+            }}
           >
             <Text className="text-white font-semibold text-center text-lg">
-              🔍 View Database
+              🧪 Test Drizzle ORM
             </Text>
-            <Text className="text-blue-100 text-center text-sm mt-1">
-              Browse all tables and data
+            <Text className="text-purple-100 text-center text-sm mt-1">
+              Create sample data with Drizzle
             </Text>
           </TouchableOpacity>
 
@@ -41,11 +51,14 @@ export default function DebugScreen() {
             className="bg-green-500 p-4 rounded-xl mb-4"
             onPress={async () => {
               try {
-                const { database } = await import("../../lib/database");
-                await database.getTableInfo();
-                console.log("✅ Database stats logged to console");
+                const drizzleQuizService = await import(
+                  "../../lib/drizzleQuizService"
+                );
+                const stats =
+                  await drizzleQuizService.default.getDatabaseStats();
+                console.log("📊 Drizzle Database Stats:", stats);
               } catch (error) {
-                console.error("❌ Error getting table info:", error);
+                console.error("❌ Error getting database stats:", error);
               }
             }}
           >
@@ -61,9 +74,12 @@ export default function DebugScreen() {
             className="bg-orange-500 p-4 rounded-xl mb-4"
             onPress={async () => {
               try {
-                const { seedDatabase } = await import("../../lib/seedDatabase");
-                const result = await seedDatabase();
-                console.log("✅ Database re-seeded:", result.message);
+                const drizzleQuizService = await import(
+                  "../../lib/drizzleQuizService"
+                );
+                const result =
+                  await drizzleQuizService.default.createSampleQuizzes();
+                console.log("✅ Drizzle Database re-seeded:", result.message);
               } catch (error) {
                 console.error("❌ Error seeding database:", error);
               }
@@ -81,9 +97,11 @@ export default function DebugScreen() {
             className="bg-red-500 p-4 rounded-xl"
             onPress={async () => {
               try {
-                const { database } = await import("../../lib/database");
-                await database.clearAllData();
-                console.log("🗑️ Database cleared successfully");
+                const drizzleQuizService = await import(
+                  "../../lib/drizzleQuizService"
+                );
+                await drizzleQuizService.default.clearAllData();
+                console.log("🗑️ Drizzle Database cleared successfully");
               } catch (error) {
                 console.error("❌ Error clearing database:", error);
               }
@@ -108,9 +126,13 @@ export default function DebugScreen() {
             className="bg-purple-500 p-4 rounded-xl mb-4"
             onPress={async () => {
               try {
-                const quizService = await import("../../lib/quizService");
+                const drizzleQuizService = await import(
+                  "../../lib/drizzleQuizService"
+                );
                 const mathQuizzes =
-                  await quizService.default.getQuizzesBySubject("Mathematics");
+                  await drizzleQuizService.default.getQuizzesBySubject(
+                    "Mathematics",
+                  );
                 console.log("📚 Mathematics Quizzes:", mathQuizzes);
               } catch (error) {
                 console.error("❌ Error loading quizzes:", error);
@@ -129,9 +151,11 @@ export default function DebugScreen() {
             className="bg-indigo-500 p-4 rounded-xl"
             onPress={async () => {
               try {
-                const quizService = await import("../../lib/quizService");
-                await quizService.default.initialize();
-                console.log("🔧 Quiz service initialized");
+                const drizzleQuizService = await import(
+                  "../../lib/drizzleQuizService"
+                );
+                await drizzleQuizService.default.initialize();
+                console.log("🔧 Drizzle Quiz service initialized");
               } catch (error) {
                 console.error("❌ Error initializing quiz service:", error);
               }
@@ -155,8 +179,8 @@ export default function DebugScreen() {
               <Text className="font-semibold">Version:</Text> 1.0.0
             </Text>
             <Text className="text-gray-300">
-              <Text className="font-semibold">Database:</Text> SQLite
-              (expo-sqlite)
+              <Text className="font-semibold">Database:</Text> SQLite + Drizzle
+              ORM
             </Text>
             <Text className="text-gray-300">
               <Text className="font-semibold">Platform:</Text> Expo SDK 51
@@ -168,6 +192,9 @@ export default function DebugScreen() {
             <Text className="text-gray-300">
               <Text className="font-semibold">Database File:</Text> studypath.db
             </Text>
+            <Text className="text-gray-300">
+              <Text className="font-semibold">ORM:</Text> Drizzle (Type-safe)
+            </Text>
           </View>
         </View>
 
@@ -178,14 +205,18 @@ export default function DebugScreen() {
           </Text>
 
           <Text className="text-gray-300 text-sm leading-6">
-            • <Text className="font-semibold">View Database:</Text> Opens a
-            detailed viewer showing all tables{"\n"}•{" "}
+            • <Text className="font-semibold">Test Drizzle ORM:</Text> Creates
+            sample data using Drizzle{"\n"}•{" "}
             <Text className="font-semibold">Log Stats:</Text> Prints table
             counts to the console{"\n"}•{" "}
             <Text className="font-semibold">Re-seed:</Text> Clears and adds
             sample quiz data{"\n"}•{" "}
             <Text className="font-semibold">Clear:</Text> Removes all data from
             database{"\n"}•{" "}
+            <Text className="font-semibold">Log Math Quizzes:</Text> Shows all
+            Mathematics quizzes{"\n"}•{" "}
+            <Text className="font-semibold">Initialize:</Text> Force initialize
+            Drizzle database{"\n"}•{" "}
             <Text className="font-semibold">Check console:</Text> Open developer
             tools to see logs
           </Text>

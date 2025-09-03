@@ -3,20 +3,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import quizService from "../../../lib/quizService";
-
-type Question = {
-  id: number;
-  quizId: number;
-  question: string;
-  optionA: string;
-  optionB: string;
-  optionC: string;
-  optionD: string;
-  correctAnswer: string; // 'A', 'B', 'C', or 'D'
-  explanation?: string;
-  questionOrder: number;
-};
+import drizzleQuizService from "../../../lib/drizzleQuizService";
+import type { Question } from "../../../lib/schema";
 
 type QuizResult = {
   score: number;
@@ -51,7 +39,7 @@ export default function TakeQuizScreen() {
   const loadQuizQuestions = useCallback(async () => {
     try {
       setLoading(true);
-      const quizWithQuestions = await quizService.getQuizWithQuestions(
+      const quizWithQuestions = await drizzleQuizService.getQuizWithQuestions(
         parsedQuiz.id,
       );
       setQuestions(quizWithQuestions.questions);
@@ -172,7 +160,7 @@ export default function TakeQuizScreen() {
     try {
       // Save quiz attempt to database
       const results = calculateResults();
-      await quizService.saveQuizAttempt({
+      await drizzleQuizService.saveQuizAttempt({
         quizId: parsedQuiz.id,
         userId: "user123", // Replace with actual user ID from auth context
         score: results.score,
@@ -181,7 +169,7 @@ export default function TakeQuizScreen() {
       });
 
       // Update user progress
-      await quizService.calculateAndUpdateProgress(
+      await drizzleQuizService.calculateAndUpdateProgress(
         "user123", // Replace with actual user ID from auth context
         parsedSubject.name,
         results.score,

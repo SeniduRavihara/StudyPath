@@ -3,7 +3,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import quizService, { Quiz } from "../../../lib/quizService";
+import drizzleQuizService from "../../../lib/drizzleQuizService";
+import type { Quiz } from "../../../lib/schema";
 
 export default function QuizzesScreen() {
   const router = useRouter();
@@ -23,8 +24,8 @@ export default function QuizzesScreen() {
   useEffect(() => {
     const logDbInfo = async () => {
       try {
-        const { database } = await import("../../../lib/database");
-        await database.getTableInfo();
+        const stats = await drizzleQuizService.getDatabaseStats();
+        console.log("📊 Drizzle Database Stats:", stats);
       } catch (error) {
         console.error("Error logging database info:", error);
       }
@@ -35,7 +36,7 @@ export default function QuizzesScreen() {
   const loadQuizzes = async () => {
     try {
       setLoading(true);
-      const subjectQuizzes = await quizService.getQuizzesBySubject(
+      const subjectQuizzes = await drizzleQuizService.getQuizzesBySubject(
         parsedSubject.name,
       );
       setQuizzes(subjectQuizzes);
@@ -43,8 +44,8 @@ export default function QuizzesScreen() {
       console.error("Error loading quizzes:", error);
       // If no quizzes exist, create sample ones
       try {
-        await quizService.createSampleQuizzes();
-        const subjectQuizzes = await quizService.getQuizzesBySubject(
+        await drizzleQuizService.createSampleQuizzes();
+        const subjectQuizzes = await drizzleQuizService.getQuizzesBySubject(
           parsedSubject.name,
         );
         setQuizzes(subjectQuizzes);
