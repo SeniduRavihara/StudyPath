@@ -13,24 +13,38 @@ export interface FeedPost {
   id: string;
   user_id: string;
   content: string;
-  type: "achievement" | "question" | "milestone" | "tip";
+  type:
+    | "achievement"
+    | "question"
+    | "milestone"
+    | "tip"
+    | "quiz_pack"
+    | "lesson_pack";
   subject: string;
   achievement: string;
   points_earned: number;
   likes: number;
   comments: number;
   media_url: string | null;
+  pack_data: any | null;
   created_at: string;
   users: FeedUser;
 }
 
 export interface CreateFeedPostData {
   content: string;
-  type: "achievement" | "question" | "milestone" | "tip";
+  type:
+    | "achievement"
+    | "question"
+    | "milestone"
+    | "tip"
+    | "quiz_pack"
+    | "lesson_pack";
   subject: string;
   achievement: string;
   points_earned?: number;
   media_url?: string;
+  pack_data?: any; // Add support for pack data
 }
 
 export class FeedService {
@@ -187,5 +201,64 @@ export class FeedService {
       "Study Tips": ["#ff9a9e", "#fad0c4"],
       "English Literature": ["#ff9ff3", "#54a0ff"],
     };
+  }
+
+  // Import MCQs from educational pack posts to SQLite
+  static async importMCQPack(
+    postId: string,
+  ): Promise<{ success: boolean; error?: any }> {
+    try {
+      // Get the post with pack data
+      const { data: post, error: postError } =
+        await this.getFeedPostById(postId);
+      if (postError || !post || !post.pack_data) {
+        return { success: false, error: "Post not found or no pack data" };
+      }
+
+      // Import MCQs to SQLite using drizzleQuizService
+      const drizzleQuizService = await import("../lib/drizzleQuizService");
+
+      // Create quiz from pack data
+      const quizData = {
+        title: `${post.subject} - ${post.achievement}`,
+        description: post.content,
+        questionCount: post.pack_data.question_count || 10,
+        timeLimit: 15,
+        difficulty: post.pack_data.difficulty || "medium",
+        subject: post.subject,
+        chapter: post.pack_data.chapter || post.subject,
+        isImported: true,
+        importedFromPostId: postId,
+      };
+
+      const result =
+        await drizzleQuizService.default.createQuizFromPack(quizData);
+
+      if (result.success) {
+        // Update the post to mark it as imported
+        await this.updateFeedPost(postId, {
+          pack_data: {
+            ...post.pack_data,
+            imported: true,
+            importedAt: new Date().toISOString(),
+          },
+        });
+      }
+
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error("Error importing MCQ pack:", error);
+      return { success: false, error };
+    }
+  }
+
+  // Check if a pack has been imported
+  static async isPackImported(postId: string): Promise<boolean> {
+    try {
+      const { data: post } = await this.getFeedPostById(postId);
+      return post?.pack_data?.imported === true;
+    } catch (error) {
+      return false;
+    }
   }
 }

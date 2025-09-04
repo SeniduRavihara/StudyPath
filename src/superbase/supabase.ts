@@ -158,39 +158,124 @@ export interface Database {
           id: string;
           user_id: string;
           content: string;
-          type: "achievement" | "question" | "milestone" | "tip";
+          type:
+            | "achievement"
+            | "question"
+            | "milestone"
+            | "tip"
+            | "quiz_pack"
+            | "lesson_pack";
           subject: string;
           achievement: string;
           points_earned: number;
           likes: number;
           comments: number;
           media_url: string | null;
+          pack_data: any | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
           content: string;
-          type: "achievement" | "question" | "milestone" | "tip";
+          type:
+            | "achievement"
+            | "question"
+            | "milestone"
+            | "tip"
+            | "quiz_pack"
+            | "lesson_pack";
           subject: string;
           achievement: string;
           points_earned?: number;
           likes?: number;
           comments?: number;
           media_url?: string | null;
+          pack_data?: any | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
           content?: string;
-          type?: "achievement" | "question" | "milestone" | "tip";
+          type?:
+            | "achievement"
+            | "question"
+            | "milestone"
+            | "tip"
+            | "quiz_pack"
+            | "lesson_pack";
           subject?: string;
           achievement?: string;
           points_earned?: number;
           likes?: number;
           comments?: number;
           media_url?: string | null;
+          pack_data?: any | null;
+          created_at?: string;
+        };
+      };
+      feed_comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+      };
+      mcqs: {
+        Row: {
+          id: string;
+          subject_id: string;
+          chapter_id: string;
+          question: string;
+          options: string[];
+          correct_answer: number;
+          explanation: string | null;
+          difficulty: "easy" | "medium" | "hard";
+          is_imported: boolean;
+          imported_from_post_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          subject_id: string;
+          chapter_id: string;
+          question: string;
+          options: string[];
+          correct_answer: number;
+          explanation?: string | null;
+          difficulty?: "easy" | "medium" | "hard";
+          is_imported?: boolean;
+          imported_from_post_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          subject_id?: string;
+          chapter_id?: string;
+          question?: string;
+          options?: string[];
+          correct_answer?: number;
+          explanation?: string | null;
+          difficulty?: "easy" | "medium" | "hard";
+          is_imported?: boolean;
+          imported_from_post_id?: string | null;
           created_at?: string;
         };
       };

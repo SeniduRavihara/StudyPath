@@ -34,6 +34,8 @@ export const initializeDrizzleDb = async () => {
         difficulty TEXT NOT NULL,
         timeLimit INTEGER NOT NULL,
         questionCount INTEGER NOT NULL,
+        isImported INTEGER DEFAULT 0,
+        importedFromPostId TEXT,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
       );

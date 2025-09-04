@@ -86,6 +86,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const { data: profile, error } = await SupabaseService.getUserProfile(
             session.user.id,
           );
+
+          console.log("AuthContext: Profile:", profile);
+
           if (error || !profile) {
             // Create new profile
             console.log("AuthContext: Creating new user profile..."); // Debug log

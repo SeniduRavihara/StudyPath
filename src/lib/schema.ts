@@ -12,6 +12,8 @@ export const quizzes = sqliteTable("quizzes", {
   }).notNull(),
   timeLimit: integer("timeLimit").notNull(), // in minutes
   questionCount: integer("questionCount").notNull(),
+  isImported: integer("isImported", { mode: "boolean" }).default(false),
+  importedFromPostId: text("importedFromPostId"),
   createdAt: text("createdAt").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updatedAt").default(sql`CURRENT_TIMESTAMP`),
 });

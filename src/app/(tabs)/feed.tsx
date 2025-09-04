@@ -156,8 +156,28 @@ export default function FeedScreen() {
         return "flag";
       case "tip":
         return "bulb";
+      case "quiz_pack":
+        return "library";
+      case "lesson_pack":
+        return "school";
       default:
         return "star";
+    }
+  };
+
+  const handleImportPack = async (post: FeedPost) => {
+    try {
+      const result = await FeedService.importMCQPack(post.id);
+      if (result.success) {
+        Alert.alert("Success", "Quiz pack imported successfully!");
+        // Refresh the feed to show updated pack status
+        loadFeedPosts();
+      } else {
+        Alert.alert("Error", "Failed to import quiz pack");
+      }
+    } catch (error) {
+      console.error("Error importing pack:", error);
+      Alert.alert("Error", "Failed to import quiz pack");
     }
   };
 
@@ -284,6 +304,31 @@ export default function FeedScreen() {
                 className="w-full h-48 rounded-2xl mb-4"
                 resizeMode="cover"
               />
+            )}
+
+            {/* Import Button for Educational Packs */}
+            {(post.type === "quiz_pack" || post.type === "lesson_pack") && (
+              <View className="mb-4">
+                <TouchableOpacity
+                  className="bg-blue-500 p-3 rounded-2xl flex-row items-center justify-center"
+                  onPress={() => handleImportPack(post)}
+                >
+                  <Ionicons name="download" size={20} color="white" />
+                  <Text className="text-white font-semibold ml-2">
+                    {post.type === "quiz_pack"
+                      ? "Import Quiz Pack"
+                      : "Import Lesson Pack"}
+                  </Text>
+                </TouchableOpacity>
+                {post.pack_data && (
+                  <View className="mt-2 bg-blue-500/10 p-3 rounded-xl">
+                    <Text className="text-blue-400 text-sm text-center">
+                      📚 {post.pack_data.question_count || 0} questions •{" "}
+                      {post.pack_data.difficulty || "Medium"} level
+                    </Text>
+                  </View>
+                )}
+              </View>
             )}
 
             {/* Actions */}

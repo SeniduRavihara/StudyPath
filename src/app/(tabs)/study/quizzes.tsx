@@ -16,6 +16,11 @@ export default function QuizzesScreen() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Add isImported property to Quiz type for this component
+  interface QuizWithImport extends Quiz {
+    isImported: boolean | null;
+  }
+
   useEffect(() => {
     loadQuizzes();
   }, []);
@@ -39,7 +44,14 @@ export default function QuizzesScreen() {
       const subjectQuizzes = await drizzleQuizService.getQuizzesBySubject(
         parsedSubject.name,
       );
-      setQuizzes(subjectQuizzes);
+
+      // Add import status checking
+      const quizzesWithImport = subjectQuizzes.map(quiz => ({
+        ...quiz,
+        isImported: quiz.isImported || false,
+      }));
+
+      setQuizzes(quizzesWithImport);
     } catch (error) {
       console.error("Error loading quizzes:", error);
       // If no quizzes exist, create sample ones
@@ -48,7 +60,14 @@ export default function QuizzesScreen() {
         const subjectQuizzes = await drizzleQuizService.getQuizzesBySubject(
           parsedSubject.name,
         );
-        setQuizzes(subjectQuizzes);
+
+        // Add import status checking
+        const quizzesWithImport = subjectQuizzes.map(quiz => ({
+          ...quiz,
+          isImported: quiz.isImported || false,
+        }));
+
+        setQuizzes(quizzesWithImport);
       } catch (createError) {
         console.error("Error creating sample quizzes:", createError);
       }
@@ -98,6 +117,34 @@ export default function QuizzesScreen() {
       default:
         return "#6b7280";
     }
+  };
+
+  const handleRemoveImportedQuiz = async (quizId: number) => {
+    Alert.alert(
+      "Remove Quiz",
+      "Are you sure you want to remove this imported quiz?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Remove from SQLite database using the correct method
+              await drizzleQuizService.removeImportedQuiz(quizId);
+              // Refresh quizzes
+              loadQuizzes();
+            } catch (error) {
+              console.error("Error removing imported quiz:", error);
+              Alert.alert("Error", "Failed to remove quiz");
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -165,54 +212,112 @@ export default function QuizzesScreen() {
             <Text className="text-white text-lg">No quizzes available</Text>
           </View>
         ) : (
-          quizzes.map(quiz => (
-            <TouchableOpacity
-              key={quiz.id}
-              className="mb-4"
-              onPress={() => handleQuizPress(quiz)}
-            >
-              <LinearGradient
-                colors={["#1a1a2e", "#16213e"]}
-                className="p-6 rounded-3xl"
-              >
-                <View className="flex-row items-center">
-                  <View className="bg-blue-500 p-4 rounded-2xl mr-4">
-                    <Ionicons name="help-circle" size={28} color="white" />
-                  </View>
-
-                  <View className="flex-1">
-                    <View className="flex-row justify-between items-center mb-2">
-                      <Text className="text-white text-lg font-bold">
-                        {quiz.title}
-                      </Text>
-                      <View
-                        className="px-3 py-1 rounded-full"
-                        style={{
-                          backgroundColor: getDifficultyColor(quiz.difficulty),
-                        }}
+          quizzes.map(quiz => {
+            const quizWithImport = quiz as QuizWithImport;
+            return (
+              <View key={quiz.id} className="mb-4">
+                <LinearGradient
+                  colors={["#1a1a2e", "#16213e"]}
+                  className="p-6 rounded-3xl"
+                >
+                  <View className="flex-row items-center">
+                    <View
+                      className={`p-4 rounded-2xl mr-4 ${
+                        quizWithImport.isImported
+                          ? "bg-green-500"
+                          : "bg-blue-500"
+                      }`}
+                    >
+                      <Ionicons
+                        name={
+                          quizWithImport.isImported ? "download" : "help-circle"
+                        }
+                        size={28}
+                        color="white"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <View className="mb-2">
+                        <View className="flex-row justify-between items-start mb-1">
+                          <Text
+                            className="text-white text-lg font-bold flex-1 mr-2"
+                            numberOfLines={2}
+                            ellipsizeMode="tail"
+                          >
+                            {quiz.title}
+                          </Text>
+                          <View className="flex-row items-center flex-shrink-0">
+                            <View
+                              className="px-3 py-1 rounded-full mr-2"
+                              style={{
+                                backgroundColor: getDifficultyColor(
+                                  quiz.difficulty,
+                                ),
+                              }}
+                            >
+                              <Text className="text-white text-xs font-semibold">
+                                {quiz.difficulty}
+                              </Text>
+                            </View>
+                            {quizWithImport.isImported && (
+                              <View className="bg-green-500/20 px-2 py-1 rounded-full">
+                                <Text className="text-green-400 text-xs font-semibold">
+                                  Imported
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                      <Text
+                        className="text-gray-400 text-sm mb-3"
+                        numberOfLines={3}
+                        ellipsizeMode="tail"
                       >
-                        <Text className="text-white text-xs font-semibold">
-                          {quiz.difficulty}
+                        {quiz.description}
+                      </Text>
+                      <View className="flex-row justify-between items-center mb-3">
+                        <Text
+                          className="text-gray-400 text-sm flex-1 mr-2"
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {quiz.questionCount} questions • {quiz.timeLimit} min
                         </Text>
+                        {quizWithImport.isImported && (
+                          <TouchableOpacity
+                            className="bg-red-500/20 p-2 rounded-full flex-shrink-0"
+                            onPress={() => handleRemoveImportedQuiz(quiz.id)}
+                          >
+                            <Ionicons name="close" size={16} color="#ef4444" />
+                          </TouchableOpacity>
+                        )}
                       </View>
                     </View>
-
-                    <Text className="text-gray-400 text-sm mb-3">
-                      {quiz.description}
-                    </Text>
-
-                    <View className="flex-row justify-between items-center mb-3">
-                      <Text className="text-gray-400 text-sm">
-                        {quiz.questionCount} questions • {quiz.timeLimit} min
-                      </Text>
+                    <View className="flex-shrink-0 ml-2">
+                      {quizWithImport.isImported ? (
+                        <TouchableOpacity onPress={() => handleQuizPress(quiz)}>
+                          <Ionicons
+                            name="play-circle"
+                            size={24}
+                            color="#10b981"
+                          />
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity onPress={() => handleQuizPress(quiz)}>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={24}
+                            color="#6b7280"
+                          />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
-
-                  <Ionicons name="chevron-forward" size={24} color="#6b7280" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          ))
+                </LinearGradient>
+              </View>
+            );
+          })
         )}
       </View>
 
@@ -246,7 +351,7 @@ export default function QuizzesScreen() {
         </LinearGradient>
       </View>
 
-      <View className="h-8" />
+      <View className="h-24" />
     </ScrollView>
   );
 }

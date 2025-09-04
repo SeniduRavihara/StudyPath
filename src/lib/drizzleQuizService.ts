@@ -1,5 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import db, { initializeDrizzleDb } from "./drizzleDb";
+import { runMigrations } from "./migrations";
 import {
   questions,
   quizAttempts,
@@ -25,6 +26,7 @@ class DrizzleQuizService {
   async initialize() {
     if (!this.initialized) {
       await initializeDrizzleDb();
+      await runMigrations();
       this.initialized = true;
       console.log("🎯 Drizzle Quiz Service initialized");
     }
@@ -40,6 +42,8 @@ class DrizzleQuizService {
       .insert(quizzes)
       .values({
         ...quizData,
+        isImported: quizData.isImported || false,
+        importedFromPostId: quizData.importedFromPostId || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       })
@@ -408,6 +412,70 @@ class DrizzleQuizService {
       console.error("❌ Error seeding Drizzle database:", error);
       throw error;
     }
+  }
+
+  // Create quiz from imported pack
+  async createQuizFromPack(quizData: {
+    title: string;
+    description: string;
+    questionCount: number;
+    timeLimit: number;
+    difficulty: string;
+    subject: string;
+    chapter: string;
+    isImported: boolean;
+    importedFromPostId: string;
+  }): Promise<{ success: boolean; error?: any }> {
+    try {
+      await this.initialize();
+
+      const newQuiz = await this.createQuiz({
+        title: quizData.title,
+        description: quizData.description,
+        subject: quizData.subject,
+        difficulty: quizData.difficulty as
+          | "Beginner"
+          | "Intermediate"
+          | "Advanced",
+        timeLimit: quizData.timeLimit,
+        questionCount: quizData.questionCount,
+        isImported: quizData.isImported,
+        importedFromPostId: quizData.importedFromPostId,
+      });
+
+      // Add sample questions for the imported quiz
+      for (let i = 0; i < Math.min(quizData.questionCount, 5); i++) {
+        await this.addQuestion({
+          quizId: newQuiz.id,
+          question: `Sample question ${i + 1} for ${quizData.title}`,
+          optionA: `Option A ${i + 1}`,
+          optionB: `Option B ${i + 1}`,
+          optionC: `Option C ${i + 1}`,
+          optionD: `Option D ${i + 1}`,
+          correctAnswer: "A",
+          explanation: `This is a sample question for the imported quiz pack.`,
+          questionOrder: i + 1,
+        });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error creating quiz from pack:", error);
+      return { success: false, error };
+    }
+  }
+
+  // Remove imported quiz
+  async removeImportedQuiz(quizId: number): Promise<void> {
+    await this.initialize();
+
+    // Delete questions first (due to foreign key constraint)
+    await db.delete(questions).where(eq(questions.quizId, quizId));
+
+    // Delete the quiz
+    await db.delete(quizzes).where(eq(quizzes.id, quizId));
+
+    console.log(`🗑️ Removed imported quiz with ID: ${quizId}`);
   }
 }
 
