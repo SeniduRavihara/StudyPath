@@ -1,152 +1,151 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-
-type User = {
-  name: string;
-  avatar: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
-  points: number;
-  streak: number;
-  rank: string;
-};
-
-type Post = {
-  id: number;
-  user: User;
-  content: string;
-  subject: string;
-  achievement: string;
-  likes: number;
-  comments: number;
-  time: string;
-  liked: boolean;
-  type: "achievement" | "question" | "milestone" | "tip";
-  xpEarned?: number;
-  media?: string;
-};
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Image,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { FeedPost, FeedService } from "../../lib/feedService";
 
 type SubjectColors = {
   [key: string]: [string, string];
 };
 
 export default function FeedScreen() {
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: 1,
-      user: {
-        name: "Sarah Johnson",
-        avatar:
-          "https://images.unsplash.com/photo-1494790108755-2616b4c12c14?w=150&h=150&fit=crop&crop=face",
-        level: "Advanced",
-        points: 3420,
-        streak: 7,
-        rank: "Diamond",
-      },
-      content:
-        "Just completed Chapter 5 of Calculus! The integration techniques are finally clicking. Who else is working on this?",
-      subject: "Mathematics",
-      achievement: "Chapter Master",
-      likes: 24,
-      comments: 8,
-      time: "2 hours ago",
-      liked: false,
-      type: "milestone",
-      xpEarned: 150,
-    },
-    {
-      id: 2,
-      user: {
-        name: "Michael Chen",
-        avatar:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-        level: "Intermediate",
-        points: 2100,
-        streak: 3,
-        rank: "Gold",
-      },
-      content:
-        "Physics lab simulation on wave interference was amazing! The virtual experiments really help understand the concepts.",
-      subject: "Physics",
-      achievement: "Lab Expert",
-      likes: 31,
-      comments: 12,
-      time: "5 hours ago",
-      liked: true,
-      type: "achievement",
-      xpEarned: 200,
-      media:
-        "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop",
-    },
-    {
-      id: 3,
-      user: {
-        name: "Emma Wilson",
-        avatar:
-          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-        level: "Beginner",
-        points: 890,
-        streak: 5,
-        rank: "Silver",
-      },
-      content:
-        "Finally got my first 100% on a Chemistry quiz! Thanks to everyone who helped me with molecular structures 🎉",
-      subject: "Chemistry",
-      achievement: "Perfect Score",
-      likes: 45,
-      comments: 15,
-      time: "1 day ago",
-      liked: false,
-      type: "achievement",
-      xpEarned: 300,
-    },
-    {
-      id: 4,
-      user: {
-        name: "Study Tips Bot",
-        avatar:
-          "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=150&h=150&fit=crop&crop=face",
-        level: "Advanced",
-        points: 9999,
-        streak: 365,
-        rank: "Legend",
-      },
-      content:
-        "📚 Pro Tip: Use the Pomodoro Technique (25 min study + 5 min break) to maximize your learning efficiency!",
-      subject: "Study Tips",
-      achievement: "Daily Tip",
-      likes: 89,
-      comments: 23,
-      time: "3 hours ago",
-      liked: false,
-      type: "tip",
-    },
-  ]);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
-  const handleLike = (postId: number): void => {
-    setPosts(
-      posts.map(post =>
-        post.id === postId
-          ? {
-              ...post,
-              liked: !post.liked,
-              likes: post.liked ? post.likes - 1 : post.likes + 1,
-            }
-          : post,
-      ),
-    );
+  // Load feed posts from Supabase
+  const loadFeedPosts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await FeedService.getFeedPosts();
+
+      if (error) {
+        console.error("Error loading feed posts:", error);
+        Alert.alert("Error", "Failed to load feed posts");
+        return;
+      }
+
+      setPosts(data || []);
+    } catch (error) {
+      console.error("Error loading feed posts:", error);
+      Alert.alert("Error", "Failed to load feed posts");
+    } finally {
+      setLoading(false);
+    }
   };
-  const subjectColors: SubjectColors = {
-    Mathematics: ["#667eea", "#764ba2"],
-    Physics: ["#f093fb", "#f5576c"],
-    Chemistry: ["#4facfe", "#00f2fe"],
-    Biology: ["#43e97b", "#38f9d7"],
-    "Study Tips": ["#ff9a9e", "#fad0c4"],
+
+  // Refresh feed posts
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadFeedPosts();
+    setRefreshing(false);
   };
+
+  // Handle like/unlike post
+  const handleLike = async (postId: string): Promise<void> => {
+    try {
+      const isLiked = likedPosts.has(postId);
+
+      // Optimistically update UI
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (isLiked) {
+          newSet.delete(postId);
+        } else {
+          newSet.add(postId);
+        }
+        return newSet;
+      });
+
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post.id === postId
+            ? {
+                ...post,
+                likes: isLiked ? post.likes - 1 : post.likes + 1,
+              }
+            : post,
+        ),
+      );
+
+      // Update in database
+      const { error } = isLiked
+        ? await FeedService.unlikePost(postId)
+        : await FeedService.likePost(postId);
+
+      if (error) {
+        console.error("Error updating like:", error);
+        // Revert optimistic update
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          if (isLiked) {
+            newSet.add(postId);
+          } else {
+            newSet.delete(postId);
+          }
+          return newSet;
+        });
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post.id === postId
+              ? {
+                  ...post,
+                  likes: isLiked ? post.likes + 1 : post.likes - 1,
+                }
+              : post,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error("Error handling like:", error);
+    }
+  };
+
+  // Load posts on component mount
+  useEffect(() => {
+    loadFeedPosts();
+  }, []);
+
+  // Set up real-time subscription for feed updates
+  useEffect(() => {
+    const subscription = FeedService.subscribeToFeedUpdates(payload => {
+      console.log("Real-time feed update:", payload);
+
+      if (payload.eventType === "INSERT") {
+        // New post added
+        setPosts(prevPosts => [payload.new, ...prevPosts]);
+      } else if (payload.eventType === "UPDATE") {
+        // Post updated (like count, etc.)
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post.id === payload.new.id ? payload.new : post,
+          ),
+        );
+      } else if (payload.eventType === "DELETE") {
+        // Post deleted
+        setPosts(prevPosts =>
+          prevPosts.filter(post => post.id !== payload.old.id),
+        );
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+  const subjectColors: SubjectColors = FeedService.getSubjectColors();
 
   const getPostTypeIcon = (
-    type: Post["type"],
+    type: FeedPost["type"],
   ): keyof typeof Ionicons.glyphMap => {
     switch (type) {
       case "achievement":
@@ -163,7 +162,12 @@ export default function FeedScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-slate-900">
+    <ScrollView
+      className="flex-1 bg-slate-900"
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* Header */}
       <LinearGradient
         colors={["#0f0f23", "#1a1a2e"]}
@@ -182,45 +186,64 @@ export default function FeedScreen() {
         </View>
       </LinearGradient>
 
+      {/* Loading State */}
+      {loading && (
+        <View className="flex-1 justify-center items-center py-20">
+          <Text className="text-gray-400 text-lg">Loading feed posts...</Text>
+        </View>
+      )}
+
       {/* Posts */}
       <View className="px-6 mt-4">
+        {!loading && posts.length === 0 && (
+          <View className="flex-1 justify-center items-center py-20">
+            <Text className="text-gray-400 text-lg">No posts yet</Text>
+            <Text className="text-gray-500 text-sm mt-2">
+              Be the first to share your study progress!
+            </Text>
+          </View>
+        )}
+
         {posts.map(post => (
           <View key={post.id} className="bg-slate-800 rounded-3xl p-5 mb-4">
             {/* User Info */}
             <View className="flex-row items-center mb-4">
-              <Image
-                source={{ uri: post.user.avatar }}
-                className="w-12 h-12 rounded-full"
-              />
+              <View className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center">
+                <Text className="text-white font-bold text-lg">
+                  {post.users.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
               <View className="flex-1 ml-3">
                 <View className="flex-row items-center">
                   <Text className="text-white font-bold text-base">
-                    {post.user.name}
+                    {post.users.name}
                   </Text>
                   <View className="bg-blue-500 px-2 py-1 rounded-full ml-2">
                     <Text className="text-white text-xs">
-                      {post.user.level}
+                      {post.users.level}
                     </Text>
                   </View>
                   <View className="bg-yellow-500/20 px-2 py-1 rounded-full ml-2">
                     <Text className="text-yellow-400 text-xs">
-                      {post.user.rank}
+                      {post.users.rank}
                     </Text>
                   </View>
                 </View>
                 <View className="flex-row items-center">
                   <Text className="text-gray-400 text-sm">
-                    {post.user.points} points
+                    {post.users.points} points
                   </Text>
                   <Text className="text-gray-400 text-sm mx-2">•</Text>
                   <View className="flex-row items-center">
                     <Ionicons name="flame" size={14} color="#FF6B6B" />
                     <Text className="text-red-400 text-sm ml-1">
-                      {post.user.streak} days
+                      {post.users.streak} days
                     </Text>
                   </View>
                   <Text className="text-gray-400 text-sm mx-2">•</Text>
-                  <Text className="text-gray-400 text-sm">{post.time}</Text>
+                  <Text className="text-gray-400 text-sm">
+                    {FeedService.formatTimeAgo(post.created_at)}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -240,10 +263,10 @@ export default function FeedScreen() {
                   {post.achievement}
                 </Text>
               </View>
-              {post.xpEarned && (
+              {post.points_earned > 0 && (
                 <View className="bg-green-500/20 px-3 py-1 rounded-full ml-2">
                   <Text className="text-green-400 text-xs font-bold">
-                    +{post.xpEarned} XP
+                    +{post.points_earned} XP
                   </Text>
                 </View>
               )}
@@ -255,9 +278,9 @@ export default function FeedScreen() {
             </Text>
 
             {/* Media */}
-            {post.media && (
+            {post.media_url && (
               <Image
-                source={{ uri: post.media }}
+                source={{ uri: post.media_url }}
                 className="w-full h-48 rounded-2xl mb-4"
                 resizeMode="cover"
               />
@@ -270,12 +293,12 @@ export default function FeedScreen() {
                 onPress={() => handleLike(post.id)}
               >
                 <Ionicons
-                  name={post.liked ? "heart" : "heart-outline"}
+                  name={likedPosts.has(post.id) ? "heart" : "heart-outline"}
                   size={20}
-                  color={post.liked ? "#ef4444" : "#6b7280"}
+                  color={likedPosts.has(post.id) ? "#ef4444" : "#6b7280"}
                 />
                 <Text
-                  className={`ml-2 text-sm ${post.liked ? "text-red-400" : "text-gray-400"}`}
+                  className={`ml-2 text-sm ${likedPosts.has(post.id) ? "text-red-400" : "text-gray-400"}`}
                 >
                   {post.likes}
                 </Text>

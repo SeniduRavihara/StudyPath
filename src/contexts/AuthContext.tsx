@@ -81,21 +81,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // If user signs in, create/update profile
       if (event === "SIGNED_IN" && session?.user) {
-        console.log("AuthContext: User signed in, creating profile..."); // Debug log
-        const { data: profile } = await SupabaseService.getUserProfile(
-          session.user.id,
-        );
-        if (!profile) {
-          // Create new profile
-          console.log("AuthContext: Creating new user profile..."); // Debug log
-          await SupabaseService.createUserProfile(session.user.id, {
-            email: session.user.email!,
-            name: session.user.user_metadata?.name || "Student",
-            level: "Beginner",
-            points: 0,
-            streak: 0,
-            rank: "Novice",
-          });
+        console.log("AuthContext: User signed in, checking profile..."); // Debug log
+        try {
+          const { data: profile, error } = await SupabaseService.getUserProfile(
+            session.user.id,
+          );
+          if (error || !profile) {
+            // Create new profile
+            console.log("AuthContext: Creating new user profile..."); // Debug log
+            const { error: createError } =
+              await SupabaseService.createUserProfile(session.user.id, {
+                email: session.user.email!,
+                name: session.user.user_metadata?.name || "Student",
+                level: "Beginner",
+                points: 0,
+                streak: 0,
+                rank: "Novice",
+              });
+            if (createError) {
+              console.error(
+                "AuthContext: Failed to create user profile:",
+                createError,
+              );
+            } else {
+              console.log("AuthContext: User profile created successfully");
+            }
+          } else {
+            console.log("AuthContext: User profile found:", profile.name);
+          }
+        } catch (error) {
+          console.error("AuthContext: Error handling user profile:", error);
+          // Don't let profile errors affect auth state
         }
       }
     });

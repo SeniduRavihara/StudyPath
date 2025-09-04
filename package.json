@@ -13,7 +13,14 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "test:drizzle": "node scripts/test-drizzle-orm.js"
+    "test:drizzle": "node scripts/test-drizzle-orm.js",
+    "seed:feed": "node scripts/seed-feed-posts.js",
+    "test:supabase": "node scripts/test-supabase-connection.js",
+    "migrate": "node scripts/run-migrations.js",
+    "migrate:manual": "node scripts/run-migrations.js --manual",
+    "setup:simple": "node scripts/run-simple-migrations.js",
+    "setup:simple:manual": "node scripts/run-simple-migrations.js --manual",
+    "add:feed-posts": "node scripts/add-sample-feed-posts.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",

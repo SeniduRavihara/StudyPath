@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS public.feed_posts (
     points_earned INTEGER DEFAULT 0,
     likes INTEGER DEFAULT 0,
     comments INTEGER DEFAULT 0,
+    media_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

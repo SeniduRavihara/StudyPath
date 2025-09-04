@@ -164,6 +164,7 @@ export interface Database {
           points_earned: number;
           likes: number;
           comments: number;
+          media_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -176,6 +177,7 @@ export interface Database {
           points_earned?: number;
           likes?: number;
           comments?: number;
+          media_url?: string | null;
           created_at?: string;
         };
         Update: {
@@ -188,6 +190,7 @@ export interface Database {
           points_earned?: number;
           likes?: number;
           comments?: number;
+          media_url?: string | null;
           created_at?: string;
         };
       };

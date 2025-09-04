@@ -53,7 +53,7 @@ export class SupabaseService {
       .from("users")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
     return { data, error };
   }
 
@@ -161,19 +161,148 @@ export class SupabaseService {
     return { data, error };
   }
 
-  static async createFeedPost(post: any) {
+  static async getFeedPostById(postId: string) {
+    const { data, error } = await supabase
+      .from("feed_posts")
+      .select(
+        `
+        *,
+        users (
+          name,
+          level,
+          points,
+          streak,
+          rank
+        )
+      `,
+      )
+      .eq("id", postId)
+      .single();
+    return { data, error };
+  }
+
+  static async createFeedPost(post: {
+    user_id: string;
+    content: string;
+    type: "achievement" | "question" | "milestone" | "tip";
+    subject: string;
+    achievement: string;
+    points_earned?: number;
+    media_url?: string;
+  }) {
     const { data, error } = await supabase
       .from("feed_posts")
       .insert([post])
+      .select(
+        `
+        *,
+        users (
+          name,
+          level,
+          points,
+          streak,
+          rank
+        )
+      `,
+      )
+      .single();
+    return { data, error };
+  }
+
+  static async updateFeedPost(
+    postId: string,
+    updates: {
+      content?: string;
+      subject?: string;
+      achievement?: string;
+      media_url?: string;
+    },
+  ) {
+    const { data, error } = await supabase
+      .from("feed_posts")
+      .update(updates)
+      .eq("id", postId)
+      .select(
+        `
+        *,
+        users (
+          name,
+          level,
+          points,
+          streak,
+          rank
+        )
+      `,
+      )
+      .single();
+    return { data, error };
+  }
+
+  static async deleteFeedPost(postId: string) {
+    const { error } = await supabase
+      .from("feed_posts")
+      .delete()
+      .eq("id", postId);
+    return { error };
+  }
+
+  static async likePost(postId: string) {
+    // First get current likes count
+    const { data: currentPost } = await supabase
+      .from("feed_posts")
+      .select("likes")
+      .eq("id", postId)
+      .single();
+
+    if (!currentPost) {
+      return { data: null, error: { message: "Post not found" } };
+    }
+
+    const { data, error } = await supabase
+      .from("feed_posts")
+      .update({ likes: currentPost.likes + 1 })
+      .eq("id", postId)
       .select()
       .single();
     return { data, error };
   }
 
-  static async likePost(postId: string, currentLikes: number) {
+  static async unlikePost(postId: string) {
+    // First get current likes count
+    const { data: currentPost } = await supabase
+      .from("feed_posts")
+      .select("likes")
+      .eq("id", postId)
+      .single();
+
+    if (!currentPost) {
+      return { data: null, error: { message: "Post not found" } };
+    }
+
     const { data, error } = await supabase
       .from("feed_posts")
-      .update({ likes: currentLikes + 1 })
+      .update({ likes: Math.max(currentPost.likes - 1, 0) })
+      .eq("id", postId)
+      .select()
+      .single();
+    return { data, error };
+  }
+
+  static async incrementComments(postId: string) {
+    // First get current comments count
+    const { data: currentPost } = await supabase
+      .from("feed_posts")
+      .select("comments")
+      .eq("id", postId)
+      .single();
+
+    if (!currentPost) {
+      return { data: null, error: { message: "Post not found" } };
+    }
+
+    const { data, error } = await supabase
+      .from("feed_posts")
+      .update({ comments: currentPost.comments + 1 })
       .eq("id", postId)
       .select()
       .single();
