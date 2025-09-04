@@ -295,6 +295,37 @@ export class FeedService {
     }
   }
 
+  // Get comments for a post
+  static async getComments(postId: string): Promise<{
+    data: any[] | null;
+    error: any;
+  }> {
+    try {
+      const { data, error } = await SupabaseService.getComments(postId);
+      return { data, error };
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      return { data: null, error };
+    }
+  }
+
+  // Create a new comment
+  static async createComment(
+    postId: string,
+    content: string,
+  ): Promise<{ data: any | null; error: any }> {
+    try {
+      const { data, error } = await SupabaseService.createComment(
+        postId,
+        content,
+      );
+      return { data, error };
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      return { data: null, error };
+    }
+  }
+
   // Reset all import flags (useful when SQLite database is cleared)
   static async resetAllImportFlags(): Promise<{
     success: boolean;

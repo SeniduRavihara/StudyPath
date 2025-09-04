@@ -309,6 +309,65 @@ export class SupabaseService {
     return { data, error };
   }
 
+  // Get comments for a post
+  static async getComments(postId: string) {
+    const { data, error } = await supabase
+      .from("feed_comments")
+      .select(
+        `
+        *,
+        users (
+          id,
+          name,
+          level,
+          points,
+          streak,
+          rank
+        )
+      `,
+      )
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
+    return { data, error };
+  }
+
+  // Create a new comment
+  static async createComment(postId: string, content: string) {
+    const { user } = await this.getCurrentUser();
+    if (!user) {
+      return { data: null, error: { message: "User not authenticated" } };
+    }
+
+    const { data, error } = await supabase
+      .from("feed_comments")
+      .insert({
+        post_id: postId,
+        user_id: user.id,
+        content: content,
+      })
+      .select(
+        `
+        *,
+        users (
+          id,
+          name,
+          level,
+          points,
+          streak,
+          rank
+        )
+      `,
+      )
+      .single();
+
+    if (!error && data) {
+      // Increment comments count on the post
+      await this.incrementComments(postId);
+    }
+
+    return { data, error };
+  }
+
   // Real-time subscriptions
   static subscribeToFeedPosts(callback: (payload: any) => void) {
     return supabase

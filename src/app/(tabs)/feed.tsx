@@ -4,9 +4,11 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
+  Modal,
   RefreshControl,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -21,6 +23,13 @@ export default function FeedScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+
+  // Comments dialog state
+  const [commentsModalVisible, setCommentsModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
 
   // Load feed posts from Supabase
   const loadFeedPosts = async () => {
@@ -185,6 +194,68 @@ export default function FeedScreen() {
       console.error("Error importing pack:", error);
       Alert.alert("Error", "Failed to import quiz pack");
     }
+  };
+
+  // Handle opening comments dialog
+  const handleOpenComments = async (postId: string) => {
+    setSelectedPostId(postId);
+    setCommentsModalVisible(true);
+    setLoadingComments(true);
+
+    try {
+      const { data, error } = await FeedService.getComments(postId);
+      if (error) {
+        console.error("Error loading comments:", error);
+        Alert.alert("Error", "Failed to load comments");
+      } else {
+        setComments(data || []);
+      }
+    } catch (error) {
+      console.error("Error loading comments:", error);
+      Alert.alert("Error", "Failed to load comments");
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // Handle adding a new comment
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !selectedPostId) return;
+
+    try {
+      const { data, error } = await FeedService.createComment(
+        selectedPostId,
+        newComment.trim(),
+      );
+      if (error) {
+        console.error("Error creating comment:", error);
+        Alert.alert("Error", "Failed to add comment");
+      } else {
+        // Add the new comment to the list
+        setComments(prev => [...prev, data]);
+        setNewComment("");
+
+        // Update the post's comment count
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post.id === selectedPostId
+              ? { ...post, comments: post.comments + 1 }
+              : post,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      Alert.alert("Error", "Failed to add comment");
+    }
+  };
+
+  // Handle closing comments dialog
+  const handleCloseComments = () => {
+    setCommentsModalVisible(false);
+    setSelectedPostId(null);
+    setComments([]);
+    setNewComment("");
   };
 
   return (
@@ -376,7 +447,10 @@ export default function FeedScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center">
+              <TouchableOpacity
+                className="flex-row items-center"
+                onPress={() => handleOpenComments(post.id)}
+              >
                 <Ionicons name="chatbubble-outline" size={20} color="#6b7280" />
                 <Text className="text-gray-400 text-sm ml-2">
                   {post.comments}
@@ -404,6 +478,124 @@ export default function FeedScreen() {
       </View>
 
       <View className="h-8" />
+
+      {/* Comments Modal */}
+      <Modal
+        visible={commentsModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={handleCloseComments}
+      >
+        <TouchableOpacity
+          className="flex-1 bg-black/80 backdrop-blur-xl justify-start items-center px-5 pt-16"
+          activeOpacity={1}
+          onPress={handleCloseComments}
+        >
+          <TouchableOpacity
+            className="bg-slate-900 rounded-3xl w-full max-w-md border border-slate-700/50"
+            style={{ height: "90%" }}
+            activeOpacity={1}
+            onPress={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <View className="px-6 py-4 rounded-t-3xl">
+              <View className="flex-row items-center justify-end">
+                <TouchableOpacity
+                  onPress={handleCloseComments}
+                  className="bg-slate-700/80 p-2 rounded-full"
+                >
+                  <Ionicons name="close" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Comments List */}
+            <ScrollView className="flex-1 px-6">
+              {loadingComments ? (
+                <View className="flex-1 justify-center items-center py-20">
+                  <Text className="text-gray-400 text-lg">
+                    Loading comments...
+                  </Text>
+                </View>
+              ) : comments.length === 0 ? (
+                <View className="flex-1 justify-center items-center py-20">
+                  <Text className="text-gray-400 text-lg">No comments yet</Text>
+                  <Text className="text-gray-500 text-sm mt-2">
+                    Be the first to comment!
+                  </Text>
+                </View>
+              ) : (
+                <View className="py-4">
+                  {comments.map(comment => (
+                    <View
+                      key={comment.id}
+                      className="bg-slate-800 rounded-2xl p-4 mb-4"
+                    >
+                      {/* Comment User Info */}
+                      <View className="flex-row items-center mb-3">
+                        <View className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 items-center justify-center">
+                          <Text className="text-white font-bold text-sm">
+                            {comment.users?.name?.charAt(0)?.toUpperCase() ||
+                              "?"}
+                          </Text>
+                        </View>
+                        <View className="flex-1 ml-3">
+                          <View className="flex-row items-center">
+                            <Text className="text-white font-semibold text-sm">
+                              {comment.users?.name || "Unknown User"}
+                            </Text>
+                            <View className="bg-blue-500 px-2 py-1 rounded-full ml-2">
+                              <Text className="text-white text-xs">
+                                {comment.users?.level || "Beginner"}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text className="text-gray-400 text-xs">
+                            {FeedService.formatTimeAgo(comment.created_at)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Comment Content */}
+                      <Text className="text-white text-sm leading-5">
+                        {comment.content}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Comment Input */}
+            <View className="bg-slate-800 p-4 border-t border-slate-700/50 rounded-b-3xl">
+              <View className="flex-row items-end">
+                <TextInput
+                  className="flex-1 bg-slate-700 text-white p-3 rounded-2xl mr-3 max-h-20"
+                  placeholder="Write a comment..."
+                  placeholderTextColor="#9ca3af"
+                  value={newComment}
+                  onChangeText={setNewComment}
+                  multiline
+                  textAlignVertical="top"
+                />
+                <TouchableOpacity
+                  onPress={handleAddComment}
+                  disabled={!newComment.trim()}
+                  className={`p-3 rounded-2xl ${
+                    newComment.trim() ? "bg-blue-500" : "bg-slate-600"
+                  }`}
+                >
+                  <Ionicons
+                    name="send"
+                    size={20}
+                    color={newComment.trim() ? "white" : "#6b7280"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
