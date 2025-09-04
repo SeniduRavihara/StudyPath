@@ -169,11 +169,17 @@ export default function FeedScreen() {
     try {
       const result = await FeedService.importMCQPack(post.id);
       if (result.success) {
-        Alert.alert("Success", "Quiz pack imported successfully!");
+        Alert.alert(
+          "Success",
+          result.message || "Quiz pack imported successfully!",
+        );
         // Refresh the feed to show updated pack status
         loadFeedPosts();
       } else {
-        Alert.alert("Error", "Failed to import quiz pack");
+        Alert.alert(
+          result.error === "Already imported" ? "Already Imported" : "Error",
+          result.message || "Failed to import quiz pack",
+        );
       }
     } catch (error) {
       console.error("Error importing pack:", error);
@@ -309,22 +315,43 @@ export default function FeedScreen() {
             {/* Import Button for Educational Packs */}
             {(post.type === "quiz_pack" || post.type === "lesson_pack") && (
               <View className="mb-4">
-                <TouchableOpacity
-                  className="bg-blue-500 p-3 rounded-2xl flex-row items-center justify-center"
-                  onPress={() => handleImportPack(post)}
-                >
-                  <Ionicons name="download" size={20} color="white" />
-                  <Text className="text-white font-semibold ml-2">
-                    {post.type === "quiz_pack"
-                      ? "Import Quiz Pack"
-                      : "Import Lesson Pack"}
-                  </Text>
-                </TouchableOpacity>
+                {post.pack_data?.imported ? (
+                  <View className="bg-green-500/20 p-3 rounded-2xl flex-row items-center justify-center border border-green-500/30">
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color="#10b981"
+                    />
+                    <Text className="text-green-400 font-semibold ml-2">
+                      {post.type === "quiz_pack"
+                        ? "Quiz Pack Imported"
+                        : "Lesson Pack Imported"}
+                    </Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    className="bg-blue-500 p-3 rounded-2xl flex-row items-center justify-center"
+                    onPress={() => handleImportPack(post)}
+                  >
+                    <Ionicons name="download" size={20} color="white" />
+                    <Text className="text-white font-semibold ml-2">
+                      {post.type === "quiz_pack"
+                        ? "Import Quiz Pack"
+                        : "Import Lesson Pack"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 {post.pack_data && (
                   <View className="mt-2 bg-blue-500/10 p-3 rounded-xl">
                     <Text className="text-blue-400 text-sm text-center">
                       📚 {post.pack_data.question_count || 0} questions •{" "}
                       {post.pack_data.difficulty || "Medium"} level
+                      {post.pack_data?.imported && (
+                        <Text className="text-green-400">
+                          {" "}
+                          • Added to {post.subject}
+                        </Text>
+                      )}
                     </Text>
                   </View>
                 )}

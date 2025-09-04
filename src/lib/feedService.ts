@@ -206,7 +206,7 @@ export class FeedService {
   // Import MCQs from educational pack posts to SQLite
   static async importMCQPack(
     postId: string,
-  ): Promise<{ success: boolean; error?: any }> {
+  ): Promise<{ success: boolean; error?: any; message?: string }> {
     try {
       // Get the post with pack data
       const { data: post, error: postError } =
@@ -215,8 +215,37 @@ export class FeedService {
         return { success: false, error: "Post not found or no pack data" };
       }
 
-      // Import MCQs to SQLite using drizzleQuizService
+      // Check if quiz already exists in SQLite with this postId
       const drizzleQuizService = await import("../lib/drizzleQuizService");
+      const existingQuizzes =
+        await drizzleQuizService.default.getQuizzesBySubject(post.subject);
+      const alreadyImported = existingQuizzes.some(
+        quiz => quiz.importedFromPostId === postId && quiz.isImported === true,
+      );
+
+      // If Supabase says imported but SQLite is empty, reset the Supabase flag
+      if (post.pack_data.imported === true && !alreadyImported) {
+        console.log("Resetting import flag for post:", postId);
+        await this.updateFeedPost(postId, {
+          pack_data: {
+            ...post.pack_data,
+            imported: false,
+            importedAt: null,
+          },
+        });
+        // Update the local post object
+        post.pack_data.imported = false;
+        post.pack_data.importedAt = null;
+      }
+
+      // Check if already imported (after potential reset)
+      if (post.pack_data.imported === true && alreadyImported) {
+        return {
+          success: false,
+          error: "Already imported",
+          message: "This quiz pack has already been imported!",
+        };
+      }
 
       // Create quiz from pack data
       const quizData = {
@@ -243,6 +272,10 @@ export class FeedService {
             importedAt: new Date().toISOString(),
           },
         });
+        return {
+          success: true,
+          message: `Quiz pack imported successfully to ${post.subject} subject!`,
+        };
       }
 
       return { success: result.success, error: result.error };
@@ -259,6 +292,41 @@ export class FeedService {
       return post?.pack_data?.imported === true;
     } catch (error) {
       return false;
+    }
+  }
+
+  // Reset all import flags (useful when SQLite database is cleared)
+  static async resetAllImportFlags(): Promise<{
+    success: boolean;
+    error?: any;
+  }> {
+    try {
+      const { data: posts, error } = await this.getFeedPosts();
+      if (error || !posts) {
+        return { success: false, error: "Failed to fetch posts" };
+      }
+
+      const packPosts = posts.filter(
+        post =>
+          (post.type === "quiz_pack" || post.type === "lesson_pack") &&
+          post.pack_data?.imported === true,
+      );
+
+      for (const post of packPosts) {
+        await this.updateFeedPost(post.id, {
+          pack_data: {
+            ...post.pack_data,
+            imported: false,
+            importedAt: null,
+          },
+        });
+      }
+
+      console.log(`Reset import flags for ${packPosts.length} posts`);
+      return { success: true };
+    } catch (error) {
+      console.error("Error resetting import flags:", error);
+      return { success: false, error };
     }
   }
 }

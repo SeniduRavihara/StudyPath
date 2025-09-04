@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function DebugScreen() {
   const router = useRouter();
@@ -97,13 +97,34 @@ export default function DebugScreen() {
             className="bg-red-500 p-4 rounded-xl"
             onPress={async () => {
               try {
+                // Clear SQLite database
                 const drizzleQuizService = await import(
                   "../../lib/drizzleQuizService"
                 );
                 await drizzleQuizService.default.clearAllData();
-                console.log("🗑️ Drizzle Database cleared successfully");
+                console.log("🗑️ SQLite Database cleared successfully");
+
+                // Reset import flags in Supabase
+                const { FeedService } = await import("../../lib/feedService");
+                const result = await FeedService.resetAllImportFlags();
+                if (result.success) {
+                  console.log("✅ Import flags reset successfully");
+                  Alert.alert(
+                    "Success",
+                    "Database cleared and import flags reset!",
+                  );
+                } else {
+                  console.log(
+                    "⚠️ Database cleared but import flags reset failed",
+                  );
+                  Alert.alert(
+                    "Partial Success",
+                    "Database cleared but import flags reset failed",
+                  );
+                }
               } catch (error) {
                 console.error("❌ Error clearing database:", error);
+                Alert.alert("Error", "Failed to clear database");
               }
             }}
           >
@@ -111,7 +132,76 @@ export default function DebugScreen() {
               🗑️ Clear Database
             </Text>
             <Text className="text-red-100 text-center text-sm mt-1">
-              Remove all data (careful!)
+              Clear SQLite + Reset Import Flags
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Full Reset */}
+        <View className="bg-slate-800 p-6 rounded-2xl">
+          <Text className="text-white text-lg font-bold mb-4">
+            ⚠️ Full Reset
+          </Text>
+
+          <TouchableOpacity
+            className="bg-red-600 p-4 rounded-xl"
+            onPress={async () => {
+              Alert.alert(
+                "Full Reset",
+                "This will clear ALL data and reset import flags. Are you sure?",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Reset Everything",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        // Clear SQLite database
+                        const drizzleQuizService = await import(
+                          "../../lib/drizzleQuizService"
+                        );
+                        await drizzleQuizService.default.clearAllData();
+                        console.log("🗑️ SQLite Database cleared");
+
+                        // Reset import flags in Supabase
+                        const { FeedService } = await import(
+                          "../../lib/feedService"
+                        );
+                        const result = await FeedService.resetAllImportFlags();
+
+                        if (result.success) {
+                          console.log("✅ Full reset completed successfully");
+                          Alert.alert(
+                            "Success",
+                            "Full reset completed! All data cleared and import flags reset.",
+                          );
+                        } else {
+                          console.log(
+                            "⚠️ Partial reset - database cleared but import flags failed",
+                          );
+                          Alert.alert(
+                            "Partial Success",
+                            "Database cleared but import flags reset failed",
+                          );
+                        }
+                      } catch (error) {
+                        console.error("❌ Error during full reset:", error);
+                        Alert.alert("Error", "Failed to complete full reset");
+                      }
+                    },
+                  },
+                ],
+              );
+            }}
+          >
+            <Text className="text-white font-semibold text-center text-lg">
+              🔥 Full Reset Everything
+            </Text>
+            <Text className="text-red-100 text-center text-sm mt-1">
+              Clear ALL data + Reset ALL flags (with confirmation)
             </Text>
           </TouchableOpacity>
         </View>
@@ -166,6 +256,43 @@ export default function DebugScreen() {
             </Text>
             <Text className="text-indigo-100 text-center text-sm mt-1">
               Force initialize database
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Feed Import Management */}
+        <View className="bg-slate-800 p-6 rounded-2xl">
+          <Text className="text-white text-lg font-bold mb-4">
+            📥 Feed Import Management
+          </Text>
+
+          <TouchableOpacity
+            className="bg-red-500 p-4 rounded-xl mb-4"
+            onPress={async () => {
+              try {
+                const { FeedService } = await import("../../lib/feedService");
+                const result = await FeedService.resetAllImportFlags();
+                if (result.success) {
+                  console.log("✅ All import flags reset successfully!");
+                  Alert.alert("Success", "All import flags have been reset!");
+                } else {
+                  console.error(
+                    "❌ Failed to reset import flags:",
+                    result.error,
+                  );
+                  Alert.alert("Error", "Failed to reset import flags");
+                }
+              } catch (error) {
+                console.error("❌ Error resetting import flags:", error);
+                Alert.alert("Error", "Failed to reset import flags");
+              }
+            }}
+          >
+            <Text className="text-white font-semibold text-center text-lg">
+              🔄 Reset Import Flags
+            </Text>
+            <Text className="text-red-100 text-center text-sm mt-1">
+              Reset all quiz pack import flags in Supabase
             </Text>
           </TouchableOpacity>
         </View>
