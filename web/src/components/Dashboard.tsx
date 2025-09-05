@@ -4,6 +4,7 @@ import {
   FileText,
   HelpCircle,
   Layers,
+  Package,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -15,6 +16,7 @@ interface Stats {
   chapters: number;
   lessons: number;
   mcqs: number;
+  feedPosts: number;
 }
 
 const Dashboard: React.FC = () => {
@@ -23,6 +25,7 @@ const Dashboard: React.FC = () => {
     chapters: 0,
     lessons: 0,
     mcqs: 0,
+    feedPosts: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -73,6 +76,14 @@ const Dashboard: React.FC = () => {
       color: "from-orange-500 to-orange-600",
       bgColor: "bg-orange-500/10",
       textColor: "text-orange-500",
+    },
+    {
+      name: "Study Packs",
+      value: stats.feedPosts,
+      icon: Package,
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-500/10",
+      textColor: "text-purple-500",
     },
   ];
 
@@ -153,6 +164,10 @@ const Dashboard: React.FC = () => {
             <button className="w-full btn-secondary text-left flex items-center space-x-3">
               <HelpCircle className="w-5 h-5" />
               <span>Add New MCQ</span>
+            </button>
+            <button className="w-full btn-secondary text-left flex items-center space-x-3">
+              <Package className="w-5 h-5" />
+              <span>Create Study Pack</span>
             </button>
           </div>
         </div>

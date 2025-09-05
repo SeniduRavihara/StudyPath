@@ -9,6 +9,7 @@ import AdminLayout from "./components/AdminLayout";
 import Dashboard from "./components/Dashboard";
 import Login from "./components/Login";
 import MCQManager from "./components/MCQManager";
+import StudyPackManager from "./components/StudyPackManager";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./index.css";
 
@@ -64,6 +65,7 @@ const AdminRoutes: React.FC = () => {
           }
         />
         <Route path="/mcqs" element={<MCQManager />} />
+        <Route path="/study-packs" element={<StudyPackManager />} />
         <Route
           path="/settings"
           element={

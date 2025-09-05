@@ -5,6 +5,8 @@ type Subject = Database["public"]["Tables"]["subjects"]["Row"];
 type Chapter = Database["public"]["Tables"]["chapters"]["Row"];
 type MCQ = Database["public"]["Tables"]["mcqs"]["Row"];
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
+type FeedPost = Database["public"]["Tables"]["feed_posts"]["Row"];
+type FeedPostInsert = Database["public"]["Tables"]["feed_posts"]["Insert"];
 
 export class SupabaseService {
   // Authentication
@@ -228,21 +230,88 @@ export class SupabaseService {
     return { data, error };
   }
 
+  // Feed Posts
+  static async getFeedPosts() {
+    const { data, error } = await supabase
+      .from("feed_posts")
+      .select(
+        `
+        *,
+        users (
+          id,
+          email,
+          user_metadata
+        )
+      `,
+      )
+      .order("created_at", { ascending: false });
+    return { data, error };
+  }
+
+  static async createFeedPost(post: FeedPostInsert) {
+    const { data, error } = await supabase
+      .from("feed_posts")
+      .insert(post)
+      .select(
+        `
+        *,
+        users (
+          id,
+          email,
+          user_metadata
+        )
+      `,
+      )
+      .single();
+    return { data, error };
+  }
+
+  static async updateFeedPost(id: string, updates: Partial<FeedPost>) {
+    const { data, error } = await supabase
+      .from("feed_posts")
+      .update(updates)
+      .eq("id", id)
+      .select(
+        `
+        *,
+        users (
+          id,
+          email,
+          user_metadata
+        )
+      `,
+      )
+      .single();
+    return { data, error };
+  }
+
+  static async deleteFeedPost(id: string) {
+    const { error } = await supabase.from("feed_posts").delete().eq("id", id);
+    return { error };
+  }
+
   // Statistics
   static async getStats() {
-    const [subjectsCount, chaptersCount, lessonsCount, mcqsCount] =
-      await Promise.all([
-        supabase.from("subjects").select("*", { count: "exact", head: true }),
-        supabase.from("chapters").select("*", { count: "exact", head: true }),
-        supabase.from("lessons").select("*", { count: "exact", head: true }),
-        supabase.from("mcqs").select("*", { count: "exact", head: true }),
-      ]);
+    const [
+      subjectsCount,
+      chaptersCount,
+      lessonsCount,
+      mcqsCount,
+      feedPostsCount,
+    ] = await Promise.all([
+      supabase.from("subjects").select("*", { count: "exact", head: true }),
+      supabase.from("chapters").select("*", { count: "exact", head: true }),
+      supabase.from("lessons").select("*", { count: "exact", head: true }),
+      supabase.from("mcqs").select("*", { count: "exact", head: true }),
+      supabase.from("feed_posts").select("*", { count: "exact", head: true }),
+    ]);
 
     return {
       subjects: subjectsCount.count || 0,
       chapters: chaptersCount.count || 0,
       lessons: lessonsCount.count || 0,
       mcqs: mcqsCount.count || 0,
+      feedPosts: feedPostsCount.count || 0,
     };
   }
 }

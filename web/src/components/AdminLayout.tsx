@@ -6,6 +6,7 @@ import {
   Layers,
   LogOut,
   Menu,
+  Package,
   Settings,
   User,
   X,
@@ -33,6 +34,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: "Chapters", path: "/admin/chapters", icon: Layers },
     { name: "Lessons", path: "/admin/lessons", icon: FileText },
     { name: "MCQs", path: "/admin/mcqs", icon: HelpCircle },
+    { name: "Study Packs", path: "/admin/study-packs", icon: Package },
     { name: "Settings", path: "/admin/settings", icon: Settings },
   ];
 
