@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Redirect } from "expo-router";
+import { Redirect, router } from "expo-router";
 import React from "react";
 import {
   Alert,
@@ -123,6 +123,25 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const handleMenuItemPress = (title: string) => {
+    switch (title) {
+      case "Edit Profile":
+        router.push("/profile/edit-profile");
+        break;
+      case "Settings":
+        router.push("/profile/settings");
+        break;
+      case "Help & Support":
+        router.push("/profile/help-support");
+        break;
+      case "About":
+        router.push("/profile/about");
+        break;
+      default:
+        Alert.alert("Coming Soon", "This feature is coming soon!");
+    }
+  };
+
   return (
     <ScrollView className="flex-1 bg-slate-900">
       {/* Profile Header */}
@@ -220,6 +239,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             key={index}
             className="bg-slate-800 p-4 rounded-2xl mb-3"
+            onPress={() => handleMenuItemPress(item.title)}
           >
             <View className="flex-row items-center">
               <Ionicons
@@ -252,6 +272,14 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
       </View>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        className="absolute bottom-24 right-6 bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full shadow-lg"
+        onPress={() => Alert.alert("Premium", "Premium features coming soon!")}
+      >
+        <Ionicons name="sparkles" size={24} color="white" />
+      </TouchableOpacity>
     </ScrollView>
   );
 }
