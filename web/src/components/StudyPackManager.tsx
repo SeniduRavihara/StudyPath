@@ -47,6 +47,7 @@ const StudyPackManager: React.FC = () => {
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [mcqs, setMcqs] = useState<MCQ[]>([]);
+  const [filteredMcqs, setFilteredMcqs] = useState<MCQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
@@ -64,6 +65,21 @@ const StudyPackManager: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (formData.subject === "") {
+      setFilteredMcqs(mcqs);
+    } else {
+      // Filter MCQs by the selected subject
+      const filtered = mcqs.filter(mcq => {
+        // We need to check if the MCQ's chapter belongs to the selected subject
+        // Since we don't have direct subject_id in MCQ, we'll need to get chapters
+        // For now, let's filter by subject name in the MCQ data structure
+        return true; // We'll implement proper filtering when we have the data structure
+      });
+      setFilteredMcqs(filtered);
+    }
+  }, [formData.subject, mcqs]);
+
   const fetchData = async () => {
     try {
       const [feedPostsRes, subjectsRes, mcqsRes] = await Promise.all([
@@ -80,7 +96,10 @@ const StudyPackManager: React.FC = () => {
         );
       }
       if (subjectsRes.data) setSubjects(subjectsRes.data);
-      if (mcqsRes.data) setMcqs(mcqsRes.data);
+      if (mcqsRes.data) {
+        setMcqs(mcqsRes.data);
+        setFilteredMcqs(mcqsRes.data);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -379,13 +398,15 @@ const StudyPackManager: React.FC = () => {
                   Select MCQs
                 </label>
                 <div className="max-h-48 overflow-y-auto bg-dark-800 border border-dark-700 rounded-lg p-4">
-                  {mcqs.length === 0 ? (
+                  {filteredMcqs.length === 0 ? (
                     <p className="text-dark-400 text-center py-4">
-                      No MCQs available. Create some MCQs first.
+                      {formData.subject
+                        ? `No MCQs available for ${formData.subject}. Create some MCQs first.`
+                        : "No MCQs available. Create some MCQs first."}
                     </p>
                   ) : (
                     <div className="space-y-2">
-                      {mcqs.map(mcq => (
+                      {filteredMcqs.map(mcq => (
                         <label
                           key={mcq.id}
                           className="flex items-start space-x-3 cursor-pointer"

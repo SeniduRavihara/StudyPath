@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  Database,
   FileText,
   HelpCircle,
   Layers,
@@ -35,6 +36,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: "Lessons", path: "/admin/lessons", icon: FileText },
     { name: "MCQs", path: "/admin/mcqs", icon: HelpCircle },
     { name: "Study Packs", path: "/admin/study-packs", icon: Package },
+    { name: "Database", path: "/admin/database", icon: Database },
     { name: "Settings", path: "/admin/settings", icon: Settings },
   ];
 

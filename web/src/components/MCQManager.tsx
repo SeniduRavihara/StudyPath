@@ -1,4 +1,4 @@
-import { Edit, HelpCircle, Plus, Save, Trash2, X } from "lucide-react";
+import { Edit, Filter, HelpCircle, Plus, Save, Trash2, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { SupabaseService } from "../lib/supabaseService";
 
@@ -24,12 +24,21 @@ interface Chapter {
   };
 }
 
+interface Subject {
+  id: string;
+  name: string;
+  color: string[];
+}
+
 const MCQManager: React.FC = () => {
   const [mcqs, setMcqs] = useState<MCQ[]>([]);
+  const [filteredMcqs, setFilteredMcqs] = useState<MCQ[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMCQ, setEditingMCQ] = useState<MCQ | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [formData, setFormData] = useState({
     chapter_id: "",
     question: "",
@@ -43,15 +52,32 @@ const MCQManager: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (selectedSubject === "") {
+      setFilteredMcqs(mcqs);
+    } else {
+      const filtered = mcqs.filter(mcq => {
+        const chapter = chapters.find(c => c.id === mcq.chapter_id);
+        return chapter && chapter.subjects.id === selectedSubject;
+      });
+      setFilteredMcqs(filtered);
+    }
+  }, [selectedSubject, mcqs, chapters]);
+
   const fetchData = async () => {
     try {
-      const [mcqsData, chaptersData] = await Promise.all([
+      const [mcqsData, chaptersData, subjectsData] = await Promise.all([
         SupabaseService.getMCQs(),
         SupabaseService.getChapters(),
+        SupabaseService.getSubjects(),
       ]);
 
-      if (mcqsData.data) setMcqs(mcqsData.data);
+      if (mcqsData.data) {
+        setMcqs(mcqsData.data);
+        setFilteredMcqs(mcqsData.data);
+      }
       if (chaptersData.data) setChapters(chaptersData.data);
+      if (subjectsData.data) setSubjects(subjectsData.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -180,6 +206,37 @@ const MCQManager: React.FC = () => {
           <Plus className="w-5 h-5" />
           <span>Add New MCQ</span>
         </button>
+      </div>
+
+      {/* Subject Filter */}
+      <div className="card">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Filter className="w-5 h-5 text-dark-400" />
+            <span className="text-white font-medium">Filter by Subject:</span>
+          </div>
+          <select
+            value={selectedSubject}
+            onChange={e => setSelectedSubject(e.target.value)}
+            className="px-4 py-2 bg-dark-800 border border-dark-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">All Subjects</option>
+            {subjects.map(subject => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name}
+              </option>
+            ))}
+          </select>
+          {selectedSubject && (
+            <button
+              onClick={() => setSelectedSubject("")}
+              className="text-dark-400 hover:text-white transition-colors"
+              title="Clear filter"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* MCQ Form */}
@@ -357,20 +414,27 @@ const MCQManager: React.FC = () => {
       {/* MCQ List */}
       <div className="card">
         <h3 className="text-xl font-semibold text-white mb-6">
-          All MCQs ({mcqs.length})
+          {selectedSubject ? "Filtered MCQs" : "All MCQs"} (
+          {filteredMcqs.length})
         </h3>
 
-        {mcqs.length === 0 ? (
+        {filteredMcqs.length === 0 ? (
           <div className="text-center py-12">
             <HelpCircle className="w-16 h-16 text-dark-400 mx-auto mb-4" />
-            <p className="text-dark-400 text-lg">No MCQs created yet</p>
+            <p className="text-dark-400 text-lg">
+              {selectedSubject
+                ? "No MCQs found for this subject"
+                : "No MCQs created yet"}
+            </p>
             <p className="text-dark-500">
-              Start by creating your first MCQ question
+              {selectedSubject
+                ? "Try selecting a different subject or create new MCQs"
+                : "Start by creating your first MCQ question"}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {mcqs.map(mcq => {
+            {filteredMcqs.map(mcq => {
               const chapter = chapters.find(c => c.id === mcq.chapter_id);
               return (
                 <div

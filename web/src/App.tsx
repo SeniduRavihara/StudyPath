@@ -7,9 +7,12 @@ import {
 } from "react-router-dom";
 import AdminLayout from "./components/AdminLayout";
 import Dashboard from "./components/Dashboard";
+import DatabaseOverview from "./components/DatabaseOverview";
 import Login from "./components/Login";
 import MCQManager from "./components/MCQManager";
+import Settings from "./components/Settings";
 import StudyPackManager from "./components/StudyPackManager";
+import SubjectManager from "./components/SubjectManager";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./index.css";
 
@@ -40,14 +43,7 @@ const AdminRoutes: React.FC = () => {
     <AdminLayout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route
-          path="/subjects"
-          element={
-            <div className="text-white text-center py-20">
-              Subjects Management - Coming Soon
-            </div>
-          }
-        />
+        <Route path="/subjects" element={<SubjectManager />} />
         <Route
           path="/chapters"
           element={
@@ -66,14 +62,8 @@ const AdminRoutes: React.FC = () => {
         />
         <Route path="/mcqs" element={<MCQManager />} />
         <Route path="/study-packs" element={<StudyPackManager />} />
-        <Route
-          path="/settings"
-          element={
-            <div className="text-white text-center py-20">
-              Settings - Coming Soon
-            </div>
-          }
-        />
+        <Route path="/database" element={<DatabaseOverview />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AdminLayout>

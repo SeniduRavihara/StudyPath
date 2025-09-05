@@ -1,10 +1,12 @@
 import {
   Activity,
   BookOpen,
+  Database,
   FileText,
   HelpCircle,
   Layers,
   Package,
+  Settings,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -168,6 +170,14 @@ const Dashboard: React.FC = () => {
             <button className="w-full btn-secondary text-left flex items-center space-x-3">
               <Package className="w-5 h-5" />
               <span>Create Study Pack</span>
+            </button>
+            <button className="w-full btn-secondary text-left flex items-center space-x-3">
+              <Database className="w-5 h-5" />
+              <span>View Database</span>
+            </button>
+            <button className="w-full btn-secondary text-left flex items-center space-x-3">
+              <Settings className="w-5 h-5" />
+              <span>Configure Settings</span>
             </button>
           </div>
         </div>
