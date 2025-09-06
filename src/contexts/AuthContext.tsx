@@ -41,20 +41,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("AuthContext: Initializing..."); // Debug log
 
     // Get initial session (this will restore from AsyncStorage automatically)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log(
-        "AuthContext: Initial session restored:",
-        session?.user?.email,
-      ); // Debug log
-      if (session) {
-        console.log("AuthContext: User session found - auto login successful!"); // Debug log
-      } else {
-        console.log("AuthContext: No session found - user needs to login"); // Debug log
+    const initializeAuth = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("AuthContext: Error getting session:", error);
+        }
+
+        console.log(
+          "AuthContext: Initial session restored:",
+          session?.user?.email,
+        ); // Debug log
+
+        if (session) {
+          console.log(
+            "AuthContext: User session found - auto login successful!",
+          ); // Debug log
+          console.log(
+            "AuthContext: Session expires at:",
+            new Date(session.expires_at! * 1000),
+          ); // Debug log
+        } else {
+          console.log("AuthContext: No session found - user needs to login"); // Debug log
+        }
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      } catch (error) {
+        console.error("AuthContext: Failed to initialize auth:", error);
+        setLoading(false);
       }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const {

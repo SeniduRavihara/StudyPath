@@ -5,8 +5,7 @@ type Subject = Database["public"]["Tables"]["subjects"]["Row"];
 type Chapter = Database["public"]["Tables"]["chapters"]["Row"];
 type MCQ = Database["public"]["Tables"]["mcqs"]["Row"];
 type Lesson = Database["public"]["Tables"]["lessons"]["Row"];
-type FeedPost = Database["public"]["Tables"]["feed_posts"]["Row"];
-type FeedPostInsert = Database["public"]["Tables"]["feed_posts"]["Insert"];
+// Feed posts types removed - table not in current schema
 
 export class SupabaseService {
   // Authentication
@@ -317,47 +316,7 @@ export class SupabaseService {
     return { data, error };
   }
 
-  static async createFeedPost(post: FeedPostInsert) {
-    const { data, error } = await supabase
-      .from("feed_posts")
-      .insert(post)
-      .select(
-        `
-        *,
-        users (
-          id,
-          email,
-          user_metadata
-        )
-      `,
-      )
-      .single();
-    return { data, error };
-  }
-
-  static async updateFeedPost(id: string, updates: Partial<FeedPost>) {
-    const { data, error } = await supabase
-      .from("feed_posts")
-      .update(updates)
-      .eq("id", id)
-      .select(
-        `
-        *,
-        users (
-          id,
-          email,
-          user_metadata
-        )
-      `,
-      )
-      .single();
-    return { data, error };
-  }
-
-  static async deleteFeedPost(id: string) {
-    const { error } = await supabase.from("feed_posts").delete().eq("id", id);
-    return { error };
-  }
+  // Feed post functions removed - table not in current schema
 
   // Statistics
   static async getStats() {

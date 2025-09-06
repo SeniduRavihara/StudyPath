@@ -2,9 +2,17 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  checkAuthStorage,
+  clearAuthStorage,
+  getSessionInfo,
+  refreshSession,
+} from "../../utils/authUtils";
 
 export default function DebugScreen() {
   const router = useRouter();
+  const { user, session, loading } = useAuth();
 
   return (
     <ScrollView className="flex-1 bg-slate-900">
@@ -19,6 +27,141 @@ export default function DebugScreen() {
       </LinearGradient>
 
       <View className="px-6 mt-8 space-y-6">
+        {/* Authentication Tools */}
+        <View className="bg-slate-800 p-6 rounded-2xl">
+          <Text className="text-white text-lg font-bold mb-4">
+            🔐 Authentication Tools
+          </Text>
+
+          {/* Current Auth Status */}
+          <View className="bg-slate-700 p-4 rounded-xl mb-4">
+            <Text className="text-white font-semibold mb-2">
+              Current Status:
+            </Text>
+            <Text className="text-gray-300 text-sm">
+              User: {user?.email || "Not logged in"}
+            </Text>
+            <Text className="text-gray-300 text-sm">
+              Loading: {loading ? "Yes" : "No"}
+            </Text>
+            <Text className="text-gray-300 text-sm">
+              Session: {session ? "Active" : "None"}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            className="bg-blue-500 p-4 rounded-xl mb-4"
+            onPress={async () => {
+              try {
+                const info = await getSessionInfo();
+                console.log("🔍 Session Info:", info);
+                Alert.alert("Session Info", JSON.stringify(info, null, 2), [
+                  { text: "OK" },
+                ]);
+              } catch (error) {
+                console.error("❌ Session info failed:", error);
+                Alert.alert("Error", "Failed to get session info");
+              }
+            }}
+          >
+            <Text className="text-white font-semibold text-center text-lg">
+              🔍 Check Session Info
+            </Text>
+            <Text className="text-blue-100 text-center text-sm mt-1">
+              Get detailed session information
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="bg-green-500 p-4 rounded-xl mb-4"
+            onPress={async () => {
+              try {
+                const result = await checkAuthStorage();
+                console.log("📱 Storage Check:", result);
+                Alert.alert(
+                  "Storage Check",
+                  `Platform: ${result.platform}\nHas Auth: ${result.hasAuth}`,
+                  [{ text: "OK" }],
+                );
+              } catch (error) {
+                console.error("❌ Storage check failed:", error);
+                Alert.alert("Error", "Failed to check storage");
+              }
+            }}
+          >
+            <Text className="text-white font-semibold text-center text-lg">
+              📱 Check Storage
+            </Text>
+            <Text className="text-green-100 text-center text-sm mt-1">
+              Check if auth data is stored
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="bg-yellow-500 p-4 rounded-xl mb-4"
+            onPress={async () => {
+              try {
+                const result = await refreshSession();
+                if (result.error) {
+                  Alert.alert("Error", "Failed to refresh session");
+                } else {
+                  Alert.alert("Success", "Session refreshed successfully");
+                }
+              } catch (error) {
+                console.error("❌ Session refresh failed:", error);
+                Alert.alert("Error", "Failed to refresh session");
+              }
+            }}
+          >
+            <Text className="text-white font-semibold text-center text-lg">
+              🔄 Refresh Session
+            </Text>
+            <Text className="text-yellow-100 text-center text-sm mt-1">
+              Force refresh authentication session
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="bg-red-500 p-4 rounded-xl mb-4"
+            onPress={async () => {
+              Alert.alert(
+                "Clear Auth Storage",
+                "This will clear all authentication data and sign you out. Are you sure?",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Clear",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        const result = await clearAuthStorage();
+                        if (result.success) {
+                          Alert.alert(
+                            "Success",
+                            "Auth storage cleared successfully",
+                          );
+                        } else {
+                          Alert.alert("Error", "Failed to clear auth storage");
+                        }
+                      } catch (error) {
+                        console.error("❌ Clear storage failed:", error);
+                        Alert.alert("Error", "Failed to clear auth storage");
+                      }
+                    },
+                  },
+                ],
+              );
+            }}
+          >
+            <Text className="text-white font-semibold text-center text-lg">
+              🗑️ Clear Auth Storage
+            </Text>
+            <Text className="text-red-100 text-center text-sm mt-1">
+              Clear all stored authentication data
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Database Tools */}
         <View className="bg-slate-800 p-6 rounded-2xl">
           <Text className="text-white text-lg font-bold mb-4">

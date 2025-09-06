@@ -80,7 +80,10 @@ const SubjectManager: React.FC = () => {
     e.preventDefault();
 
     try {
-      const { data, error } = await SupabaseService.createSubject(formData);
+      const { data, error } = await SupabaseService.createSubject({
+        ...formData,
+        color: formData.color.join(","), // Convert array to string for database
+      });
 
       if (error) throw error;
 
@@ -103,7 +106,10 @@ const SubjectManager: React.FC = () => {
     try {
       const { data, error } = await SupabaseService.updateSubject(
         editingSubject.id,
-        formData,
+        {
+          ...formData,
+          color: formData.color.join(","), // Convert array to string for database
+        },
       );
 
       if (error) throw error;

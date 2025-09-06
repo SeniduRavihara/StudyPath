@@ -400,16 +400,10 @@ const DatabaseOverview: React.FC = () => {
                               >
                                 <div className="flex items-center space-x-3">
                                   {column.is_primary_key && (
-                                    <Key
-                                      className="w-4 h-4 text-yellow-500"
-                                      title="Primary Key"
-                                    />
+                                    <Key className="w-4 h-4 text-yellow-500" />
                                   )}
                                   {column.is_foreign_key && (
-                                    <Link
-                                      className="w-4 h-4 text-blue-500"
-                                      title="Foreign Key"
-                                    />
+                                    <Link className="w-4 h-4 text-blue-500" />
                                   )}
                                   <span className="text-white font-medium">
                                     {column.column_name}

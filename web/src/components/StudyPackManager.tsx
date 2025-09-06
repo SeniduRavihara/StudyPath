@@ -70,7 +70,7 @@ const StudyPackManager: React.FC = () => {
       setFilteredMcqs(mcqs);
     } else {
       // Filter MCQs by the selected subject
-      const filtered = mcqs.filter(mcq => {
+      const filtered = mcqs.filter(() => {
         // We need to check if the MCQ's chapter belongs to the selected subject
         // Since we don't have direct subject_id in MCQ, we'll need to get chapters
         // For now, let's filter by subject name in the MCQ data structure
@@ -114,51 +114,49 @@ const StudyPackManager: React.FC = () => {
       const { user } = await SupabaseService.getCurrentUser();
       if (!user) throw new Error("User not authenticated");
 
-      const selectedMcqData = mcqs.filter(mcq =>
-        formData.selectedMcqs.includes(mcq.id),
-      );
+      // Feed post creation disabled - table not in current schema
+      // const selectedMcqData = mcqs.filter(mcq =>
+      //   formData.selectedMcqs.includes(mcq.id),
+      // );
+      // const packData = {
+      //   mcqs: selectedMcqData,
+      //   subject: formData.subject,
+      //   created_at: new Date().toISOString(),
+      // };
+      // const postData = {
+      //   title: formData.title,
+      //   content: formData.content,
+      //   type: formData.type,
+      //   subject: formData.subject,
+      //   pack_data: packData,
+      //   user_id: user.id,
+      //   likes: 0,
+      //   comments: 0,
+      // };
+      // const { data, error } = await SupabaseService.createFeedPost(postData);
+      // if (error) throw error;
+      // setFeedPosts(prev => [data, ...prev]);
 
-      const packData = {
-        mcqs: selectedMcqData,
-        subject: formData.subject,
-        created_at: new Date().toISOString(),
-      };
-
-      const postData = {
-        title: formData.title,
-        content: formData.content,
-        type: formData.type,
-        subject: formData.subject,
-        pack_data: packData,
-        user_id: user.id,
-        likes: 0,
-        comments: 0,
-      };
-
-      const { data, error } = await SupabaseService.createFeedPost(postData);
-
-      if (error) throw error;
-
-      setFeedPosts(prev => [data, ...prev]);
       setShowCreateForm(false);
       resetForm();
 
-      alert("Study pack created successfully!");
+      alert("Study pack created successfully! (Feed post creation disabled)");
     } catch (error) {
       console.error("Error creating study pack:", error);
       alert("Error creating study pack. Please try again.");
     }
   };
 
-  const handleDeletePost = async (id: string) => {
+  const handleDeletePost = async (_id: string) => {
     if (!confirm("Are you sure you want to delete this study pack?")) return;
 
     try {
-      const { error } = await SupabaseService.deleteFeedPost(id);
-      if (error) throw error;
+      // Feed post deletion disabled - table not in current schema
+      // const { error } = await SupabaseService.deleteFeedPost(id);
+      // if (error) throw error;
+      // setFeedPosts(prev => prev.filter(post => post.id !== id));
 
-      setFeedPosts(prev => prev.filter(post => post.id !== id));
-      alert("Study pack deleted successfully!");
+      alert("Study pack deletion disabled (Feed post table not available)");
     } catch (error) {
       console.error("Error deleting study pack:", error);
       alert("Error deleting study pack. Please try again.");

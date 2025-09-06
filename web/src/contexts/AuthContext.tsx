@@ -30,12 +30,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Web Auth: Error getting session:", error);
+        }
+
+        console.log(
+          "Web Auth: Initial session restored:",
+          session?.user?.email,
+        );
+
+        if (session) {
+          console.log("Web Auth: User session found - auto login successful!");
+          console.log(
+            "Web Auth: Session expires at:",
+            new Date(session.expires_at! * 1000),
+          );
+        } else {
+          console.log("Web Auth: No session found - user needs to login");
+        }
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      } catch (error) {
+        console.error("Web Auth: Failed to initialize auth:", error);
+        setLoading(false);
+      }
     };
 
     getInitialSession();
