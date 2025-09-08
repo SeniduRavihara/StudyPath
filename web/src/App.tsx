@@ -15,6 +15,7 @@ import StudyPackManager from "./components/StudyPackManager";
 import SubjectManager from "./components/SubjectManager";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import "./index.css";
+import "./utils/sessionDebug"; // Import debug utility
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({

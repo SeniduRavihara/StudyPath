@@ -9,6 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    storage: typeof window !== "undefined" ? window.localStorage : undefined,
     storageKey: "studypath-admin-auth", // Custom storage key for web admin
     autoRefreshToken: true,
     persistSession: true,
