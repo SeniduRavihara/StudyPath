@@ -41,31 +41,66 @@ interface LearningFlowPathProps {
   courseProgress: number;
 }
 
-// Generate flow path between nodes
-const generateFlowPath = (nodes: LearningNode[]): string => {
-  if (nodes.length < 2) return "";
+// Vertical flow configuration
+const FLOW_CONFIG = {
+  nodeSpacing: 180, // Vertical spacing between nodes
+  leftColumnX: 0.3, // 30% from left edge
+  rightColumnX: 0.7, // 70% from left edge
+  startY: 100, // Start 100px from top
+  nodeSize: 100, // Node diameter for positioning
+};
 
-  const sortedNodes = [...nodes].sort((a, b) => a.position.y - b.position.y);
-  let path = `M ${sortedNodes[0].position.x} ${sortedNodes[0].position.y}`;
+// Generate vertical flow positions for nodes
+const generateVerticalFlowPositions = (
+  nodes: LearningNode[],
+): LearningNode[] => {
+  const { width: screenWidth } = Dimensions.get("window");
 
-  for (let i = 1; i < sortedNodes.length; i++) {
-    const prevNode = sortedNodes[i - 1];
-    const currentNode = sortedNodes[i];
+  return nodes.map((node, index) => {
+    // Alternate between left and right columns
+    const isLeftColumn = index % 2 === 0;
+    const x = isLeftColumn
+      ? screenWidth * FLOW_CONFIG.leftColumnX
+      : screenWidth * FLOW_CONFIG.rightColumnX;
 
-    // Create smooth curves between nodes
-    const controlPoint1X =
-      prevNode.position.x +
-      (currentNode.position.x - prevNode.position.x) * 0.3;
-    const controlPoint1Y = prevNode.position.y + 50;
-    const controlPoint2X =
-      currentNode.position.x -
-      (currentNode.position.x - prevNode.position.x) * 0.3;
-    const controlPoint2Y = currentNode.position.y - 50;
+    // Calculate Y position with proper spacing
+    const y = FLOW_CONFIG.startY + index * FLOW_CONFIG.nodeSpacing;
 
-    path += ` C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${currentNode.position.x} ${currentNode.position.y}`;
+    return {
+      ...node,
+      position: { x, y },
+    };
+  });
+};
+
+// Generate L-shaped path for vertical flow
+const createVerticalFlowPath = (
+  startNode: LearningNode,
+  endNode: LearningNode,
+): string => {
+  const startX = startNode.position.x;
+  const startY = startNode.position.y;
+  const endX = endNode.position.x;
+  const endY = endNode.position.y;
+
+  // For vertical flow, create L-shaped path going down then across
+  const midY = startY + (endY - startY) / 2;
+
+  return `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
+};
+
+// Generate all vertical flow paths between consecutive nodes
+const generateVerticalFlowPaths = (nodes: LearningNode[]): string[] => {
+  if (nodes.length < 2) return [];
+
+  const paths: string[] = [];
+
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const currentPath = createVerticalFlowPath(nodes[i], nodes[i + 1]);
+    paths.push(currentPath);
   }
 
-  return path;
+  return paths;
 };
 
 // Node component with animations
@@ -259,9 +294,17 @@ export const LearningFlowPath: React.FC<LearningFlowPathProps> = ({
   courseTitle,
   courseProgress,
 }) => {
-  const [scrollY] = useState(new Animated.Value(0));
+  // Generate vertical flow positions and paths
+  const flowNodes = generateVerticalFlowPositions(nodes);
+  const verticalPaths = generateVerticalFlowPaths(flowNodes);
 
-  const flowPath = generateFlowPath(nodes);
+  // Calculate total content height for scrolling
+  const totalContentHeight =
+    flowNodes.length > 0
+      ? flowNodes[flowNodes.length - 1].position.y +
+        FLOW_CONFIG.nodeSpacing +
+        200
+      : Dimensions.get("window").height;
 
   return (
     <View className="flex-1 bg-slate-900">
@@ -334,37 +377,45 @@ export const LearningFlowPath: React.FC<LearningFlowPathProps> = ({
         </View>
       </LinearGradient>
 
-      {/* Learning Flow Path */}
+      {/* Vertical Flow ScrollView */}
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{
+          minHeight: totalContentHeight,
+          paddingBottom: 100,
+        }}
       >
         <View
           className="relative"
           style={{
-            minHeight: Math.max(...nodes.map(n => n.position.y)) + 200,
+            minHeight: totalContentHeight,
             width: screenWidth,
           }}
         >
-          {/* Flow Path SVG */}
+          {/* Vertical Flow Paths SVG */}
           <Svg
-            height="100%"
+            height={totalContentHeight}
             width="100%"
             style={{ position: "absolute", top: 0, left: 0 }}
           >
-            <Path
-              d={flowPath}
-              stroke="#4b5563"
-              strokeWidth="4"
-              fill="none"
-              strokeDasharray="8,4"
-              opacity={0.6}
-            />
+            {verticalPaths.map((path, index) => (
+              <Path
+                key={index}
+                d={path}
+                stroke="#4b5563"
+                strokeWidth="3"
+                fill="none"
+                strokeDasharray="6,3"
+                opacity={0.7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
           </Svg>
 
           {/* Learning Nodes */}
-          {nodes.map((node, index) => (
+          {flowNodes.map((node, index) => (
             <LearningNodeComponent
               key={node.id}
               node={node}
@@ -381,12 +432,12 @@ export const LearningFlowPath: React.FC<LearningFlowPathProps> = ({
           <View>
             <Text className="text-white font-semibold">
               Next:{" "}
-              {nodes.find(n => n.status === "current")?.title ||
+              {flowNodes.find(n => n.status === "current")?.title ||
                 "Complete the course!"}
             </Text>
             <Text className="text-gray-400 text-sm">
-              {nodes.filter(n => n.status === "completed").length} of{" "}
-              {nodes.length} completed
+              {flowNodes.filter(n => n.status === "completed").length} of{" "}
+              {flowNodes.length} completed
             </Text>
           </View>
           <View className="flex-row items-center">
