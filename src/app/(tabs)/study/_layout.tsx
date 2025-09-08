@@ -9,6 +9,8 @@ export default function StudyLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="topics" />
+        <Stack.Screen name="flow" />
+        <Stack.Screen name="subscribe" />
         <Stack.Screen name="subject" />
         <Stack.Screen name="lesson" />
         <Stack.Screen name="quizzes" />

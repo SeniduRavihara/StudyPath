@@ -24,6 +24,17 @@ export default function TopicsScreen() {
   const topics: Topic[] = [
     {
       id: 1,
+      title: "Learning Path",
+      description: "Follow the interactive flow-based learning journey",
+      icon: "git-branch",
+      color: ["#8b5cf6", "#7c3aed"],
+      type: "lessons",
+      count: 1,
+      completed: 0,
+      difficulty: "Beginner",
+    },
+    {
+      id: 2,
       title: "Study Lessons",
       description: "Learn through interactive lessons and examples",
       icon: "book",
@@ -34,7 +45,7 @@ export default function TopicsScreen() {
       difficulty: "Beginner",
     },
     {
-      id: 2,
+      id: 3,
       title: "Practice Quizzes",
       description: "Test your knowledge with MCQs and exercises",
       icon: "help-circle",
@@ -47,7 +58,13 @@ export default function TopicsScreen() {
   ];
 
   const handleTopicPress = (topic: Topic) => {
-    if (topic.type === "lessons") {
+    if (topic.id === 1) {
+      // Navigate to flow-based learning path
+      router.push({
+        pathname: "/study/flow",
+        params: { subject: JSON.stringify(parsedSubject) },
+      });
+    } else if (topic.type === "lessons") {
       // Navigate to chapters/lessons
       router.push({
         pathname: "/study/subject",
@@ -105,12 +122,16 @@ export default function TopicsScreen() {
             <Text className="text-white opacity-80 text-sm">Chapters</Text>
           </View>
           <View className="items-center">
-            <Text className="text-white text-2xl font-bold">201</Text>
-            <Text className="text-white opacity-80 text-sm">Total Items</Text>
+            <Text className="text-white text-2xl font-bold">
+              {parsedSubject.completed || 0}
+            </Text>
+            <Text className="text-white opacity-80 text-sm">Completed</Text>
           </View>
           <View className="items-center">
-            <Text className="text-white text-2xl font-bold">3.2k</Text>
-            <Text className="text-white opacity-80 text-sm">Points</Text>
+            <Text className="text-white text-2xl font-bold">
+              {parsedSubject.xp || 0}
+            </Text>
+            <Text className="text-white opacity-80 text-sm">XP</Text>
           </View>
         </View>
       </LinearGradient>

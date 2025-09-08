@@ -11,9 +11,9 @@ import {
 } from "react-native";
 import { useAuth } from "../../../contexts/AuthContext";
 import {
-  Subject,
-  SubscriptionService,
-} from "../../../superbase/services/subscriptionService";
+  MockSubject,
+  MockSubscriptionService,
+} from "../../../lib/mockSubscriptionService";
 
 // Define types for better type safety
 type LocalSubject = {
@@ -34,16 +34,16 @@ export default function StudyScreen() {
   const parsedSubject = subject ? JSON.parse(subject as string) : null;
   const { user } = useAuth();
 
-  const [subscribedSubjects, setSubscribedSubjects] = useState<Subject[]>([]);
+  const [subscribedSubjects, setSubscribedSubjects] = useState<MockSubject[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   // Load user's subscribed subjects
   const loadSubscribedSubjects = async () => {
-    if (!user?.id) return;
-
     try {
-      const subjects = await SubscriptionService.getUserSubscriptions(user.id);
+      const subjects = MockSubscriptionService.getSubscribedSubjects();
       setSubscribedSubjects(subjects);
     } catch (error) {
       console.error("Error loading subscribed subjects:", error);
@@ -62,7 +62,7 @@ export default function StudyScreen() {
   // Load subjects on component mount
   useEffect(() => {
     loadSubscribedSubjects();
-  }, [user?.id]);
+  }, []);
 
   // Handle subscribing to new subjects
   const handleSubscribeToSubjects = () => {
@@ -180,13 +180,13 @@ export default function StudyScreen() {
 
                     <View className="flex-row justify-between items-center mb-3">
                       <Text className="text-gray-400 text-sm">
-                        {subject.user_progress?.completed_chapters || 0}/
-                        {subject.chapters} chapters completed
+                        {subject.completed}/{subject.chapters} chapters
+                        completed
                       </Text>
                       <View className="flex-row items-center">
                         <Ionicons name="star" size={16} color="#FFD700" />
                         <Text className="text-yellow-400 text-sm ml-1">
-                          {subject.user_progress?.total_xp || 0} XP
+                          {subject.xp} XP
                         </Text>
                       </View>
                     </View>
@@ -196,20 +196,19 @@ export default function StudyScreen() {
                         colors={subject.color}
                         className="rounded-full h-2"
                         style={{
-                          width: `${((subject.user_progress?.completed_chapters || 0) / subject.chapters) * 100}%`,
+                          width: `${(subject.completed / subject.chapters) * 100}%`,
                         }}
                       />
                     </View>
 
-                    {subject.user_progress?.streak &&
-                      subject.user_progress.streak > 0 && (
-                        <View className="flex-row items-center mt-2">
-                          <Ionicons name="flame" size={16} color="#FF6B6B" />
-                          <Text className="text-red-400 text-xs ml-1">
-                            {subject.user_progress.streak} day streak
-                          </Text>
-                        </View>
-                      )}
+                    {subject.streak > 0 && (
+                      <View className="flex-row items-center mt-2">
+                        <Ionicons name="flame" size={16} color="#FF6B6B" />
+                        <Text className="text-red-400 text-xs ml-1">
+                          {subject.streak} day streak
+                        </Text>
+                      </View>
+                    )}
                   </View>
 
                   <Ionicons name="chevron-forward" size={24} color="#6b7280" />
