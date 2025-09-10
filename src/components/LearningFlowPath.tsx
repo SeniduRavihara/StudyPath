@@ -41,27 +41,64 @@ interface LearningFlowPathProps {
   courseProgress: number;
 }
 
-// Vertical flow configuration
+// 3-Column Grid System Configuration
 const FLOW_CONFIG = {
-  nodeSpacing: 180, // Vertical spacing between nodes
-  leftColumnX: 0.3, // 30% from left edge
-  rightColumnX: 0.7, // 70% from left edge
-  startY: 100, // Start 100px from top
+  nodeSpacing: 200, // Vertical spacing between nodes (increased for better flow)
+  leftColumnX: 0.2, // 20% from left edge (left column)
+  centerColumnX: 0.5, // 50% from left edge (center column)
+  rightColumnX: 0.8, // 80% from left edge (right column)
+  startY: 120, // Start 120px from top
   nodeSize: 100, // Node diameter for positioning
+  connectionOffset: 25, // Vertical offset for L-shaped connections
 };
 
-// Generate vertical flow positions for nodes
+// 3-Column Grid Flow Pattern (Center acts as transition hub)
+const POSITION_PATTERN = [
+  "center", // Row 1: Start center
+  "right", // Row 2: Move right
+  "center", // Row 3: Back to center
+  "left", // Row 4: Move left
+  "center", // Row 5: Back to center
+  "right", // Row 6: Move right
+  "center", // Row 7: Back to center (FIXED!)
+  "left", // Row 8: Move left
+  "center", // Row 9: Back to center
+  "right", // Row 10: Move right
+  "center", // Row 11: Back to center
+  "left", // Row 12: Move left
+];
+
+// Get smart position for node based on Mimo's organic pattern
+const getSmartPosition = (index: number): "left" | "center" | "right" => {
+  return POSITION_PATTERN[index % POSITION_PATTERN.length] as
+    | "left"
+    | "center"
+    | "right";
+};
+
+// Generate vertical flow positions for nodes using 3-column system
 const generateVerticalFlowPositions = (
   nodes: LearningNode[],
 ): LearningNode[] => {
   const { width: screenWidth } = Dimensions.get("window");
 
   return nodes.map((node, index) => {
-    // Alternate between left and right columns
-    const isLeftColumn = index % 2 === 0;
-    const x = isLeftColumn
-      ? screenWidth * FLOW_CONFIG.leftColumnX
-      : screenWidth * FLOW_CONFIG.rightColumnX;
+    // Get position from organic pattern
+    const positionKey = getSmartPosition(index);
+
+    // Map position to actual X coordinate
+    let x: number;
+    switch (positionKey) {
+      case "left":
+        x = screenWidth * FLOW_CONFIG.leftColumnX;
+        break;
+      case "center":
+        x = screenWidth * FLOW_CONFIG.centerColumnX;
+        break;
+      case "right":
+        x = screenWidth * FLOW_CONFIG.rightColumnX;
+        break;
+    }
 
     // Calculate Y position with proper spacing
     const y = FLOW_CONFIG.startY + index * FLOW_CONFIG.nodeSpacing;
@@ -73,20 +110,122 @@ const generateVerticalFlowPositions = (
   });
 };
 
-// Generate L-shaped path for vertical flow
+// Get node anchor point based on position and direction
+const getNodeAnchorPoint = (
+  node: LearningNode,
+  direction: "top" | "bottom" | "left" | "right" | "center",
+): { x: number; y: number } => {
+  const centerX = node.position.x;
+  const centerY = node.position.y;
+  const halfSize = FLOW_CONFIG.nodeSize / 2;
+
+  switch (direction) {
+    case "top":
+      return { x: centerX, y: centerY - halfSize };
+    case "bottom":
+      return { x: centerX, y: centerY + halfSize };
+    case "left":
+      return { x: centerX - halfSize, y: centerY };
+    case "right":
+      return { x: centerX + halfSize, y: centerY };
+    case "center":
+      return { x: centerX, y: centerY };
+    default:
+      return { x: centerX, y: centerY };
+  }
+};
+
+// Get connection points based on node positions and flow direction
+const getConnectionPoints = (
+  currentNode: LearningNode,
+  nextNode: LearningNode,
+  currentIndex: number,
+): { start: { x: number; y: number }; end: { x: number; y: number } } => {
+  const currentPos = getSmartPosition(currentIndex);
+  const nextPos = getSmartPosition(currentIndex + 1);
+
+  let startPoint: { x: number; y: number };
+  let endPoint: { x: number; y: number };
+
+  // FIXED LOGIC: Based on your exact requirements
+  if (currentPos === "center" && nextPos === "right") {
+    // 1st node (center) → 2nd node (right): Start from RIGHT side, end at TOP
+    startPoint = getNodeAnchorPoint(currentNode, "right");
+    endPoint = getNodeAnchorPoint(nextNode, "top");
+  } else if (currentPos === "right" && nextPos === "center") {
+    // 2nd node (right) → 3rd node (center): Start from BOTTOM, end at RIGHT side
+    startPoint = getNodeAnchorPoint(currentNode, "bottom");
+    endPoint = getNodeAnchorPoint(nextNode, "right");
+  } else if (currentPos === "center" && nextPos === "left") {
+    // 3rd node (center) → 4th node (left): Start from LEFT side, end at TOP
+    startPoint = getNodeAnchorPoint(currentNode, "left");
+    endPoint = getNodeAnchorPoint(nextNode, "top");
+  } else if (currentPos === "left" && nextPos === "center") {
+    // 4th node (left) → 5th node (center): Start from BOTTOM, end at LEFT side
+    startPoint = getNodeAnchorPoint(currentNode, "bottom");
+    endPoint = getNodeAnchorPoint(nextNode, "left");
+  } else {
+    // Fallback for other combinations
+    startPoint = getNodeAnchorPoint(currentNode, "bottom");
+    endPoint = getNodeAnchorPoint(nextNode, "top");
+  }
+
+  return { start: startPoint, end: endPoint };
+};
+
+// Create proper L-shaped path with correct orientation based on connection type
 const createVerticalFlowPath = (
   startNode: LearningNode,
   endNode: LearningNode,
+  nodeIndex: number,
 ): string => {
-  const startX = startNode.position.x;
-  const startY = startNode.position.y;
-  const endX = endNode.position.x;
-  const endY = endNode.position.y;
+  const points = getConnectionPoints(startNode, endNode, nodeIndex);
+  const start = points.start;
+  const end = points.end;
 
-  // For vertical flow, create L-shaped path going down then across
-  const midY = startY + (endY - startY) / 2;
+  // SPECIFIC L-SHAPE PATTERNS: Based on exact connection types
+  const currentPos = getSmartPosition(nodeIndex);
+  const nextPos = getSmartPosition(nodeIndex + 1);
 
-  return `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
+  let path: string;
+
+  // Create specific L-shape patterns for each connection type
+  if (currentPos === "center" && nextPos === "right") {
+    // 1st → 2nd: Center to Right - go RIGHT first, then DOWN
+    path = `M ${start.x} ${start.y} L ${end.x} ${start.y} L ${end.x} ${end.y}`;
+  } else if (currentPos === "right" && nextPos === "center") {
+    // 2nd → 3rd: Right to Center - go DOWN first, then LEFT
+    path = `M ${start.x} ${start.y} L ${start.x} ${end.y} L ${end.x} ${end.y}`;
+  } else if (currentPos === "center" && nextPos === "left") {
+    // 3rd → 4th: Center to Left - go LEFT first, then DOWN
+    path = `M ${start.x} ${start.y} L ${end.x} ${start.y} L ${end.x} ${end.y}`;
+  } else if (currentPos === "left" && nextPos === "center") {
+    // 4th → 5th: Left to Center - go DOWN first, then RIGHT
+    path = `M ${start.x} ${start.y} L ${start.x} ${end.y} L ${end.x} ${end.y}`;
+  } else if (currentPos === "center" && nextPos === "center") {
+    // Center to Center - straight line down
+    path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+  } else {
+    // Fallback: determine based on relative positions
+    if (start.x === end.x) {
+      // Same X position - straight line down
+      path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+    } else if (start.y === end.y) {
+      // Same Y position - straight line across
+      path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+    } else {
+      // Different X and Y - create L-shape
+      if (end.x > start.x) {
+        // Target is to the RIGHT of current - go RIGHT first, then DOWN
+        path = `M ${start.x} ${start.y} L ${end.x} ${start.y} L ${end.x} ${end.y}`;
+      } else {
+        // Target is to the LEFT of current - go DOWN first, then LEFT
+        path = `M ${start.x} ${start.y} L ${start.x} ${end.y} L ${end.x} ${end.y}`;
+      }
+    }
+  }
+
+  return path;
 };
 
 // Generate all vertical flow paths between consecutive nodes
@@ -96,7 +235,7 @@ const generateVerticalFlowPaths = (nodes: LearningNode[]): string[] => {
   const paths: string[] = [];
 
   for (let i = 0; i < nodes.length - 1; i++) {
-    const currentPath = createVerticalFlowPath(nodes[i], nodes[i + 1]);
+    const currentPath = createVerticalFlowPath(nodes[i], nodes[i + 1], i);
     paths.push(currentPath);
   }
 
@@ -298,12 +437,12 @@ export const LearningFlowPath: React.FC<LearningFlowPathProps> = ({
   const flowNodes = generateVerticalFlowPositions(nodes);
   const verticalPaths = generateVerticalFlowPaths(flowNodes);
 
-  // Calculate total content height for scrolling
+  // Calculate total content height for scrolling (shows 4-5 nodes at once)
   const totalContentHeight =
     flowNodes.length > 0
       ? flowNodes[flowNodes.length - 1].position.y +
         FLOW_CONFIG.nodeSpacing +
-        200
+        300 // Extra padding for better scrolling
       : Dimensions.get("window").height;
 
   return (
@@ -403,11 +542,11 @@ export const LearningFlowPath: React.FC<LearningFlowPathProps> = ({
               <Path
                 key={index}
                 d={path}
-                stroke="#4b5563"
-                strokeWidth="3"
+                stroke="#666666"
+                strokeWidth="2"
                 fill="none"
-                strokeDasharray="6,3"
-                opacity={0.7}
+                strokeDasharray="8,4"
+                opacity={0.8}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
